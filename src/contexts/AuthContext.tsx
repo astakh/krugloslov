@@ -7,9 +7,17 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { useNavigate } from "react-router-dom";
 import apiClient from "../api/client";
 
+interface UserInfo {
+  id: number;
+  email: string;
+  is_onboarded: boolean;
+  is_admin: boolean;
+}
+
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
+  user: UserInfo | null;
 }
 
 interface AuthContextValue extends AuthState {
@@ -17,6 +25,7 @@ interface AuthContextValue extends AuthState {
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   accessToken: string | null;
+  completeOnboarding: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -31,6 +40,7 @@ interface TokenResponse {
  */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
@@ -38,6 +48,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshPromiseRef = useRef<Promise<string> | null>(null);
 
   const isAuthenticated = accessToken !== null;
+
+  /**
+   * Fetch current user info from /auth/me
+   */
+  const fetchUserInfo = useCallback(async (token: string): Promise<UserInfo> => {
+    const response = await fetch("/api/auth/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch user info");
+    }
+    
+    return response.json();
+  }, []);
 
   /**
    * Refresh the access token using the refresh token cookie.
@@ -54,10 +82,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const response = await apiClient.post<TokenResponse>("/auth/refresh");
         const newToken = response.access_token;
         setAccessToken(newToken);
+        
+        // Fetch user info with new token
+        try {
+          const userInfo = await fetchUserInfo(newToken);
+          setUser(userInfo);
+        } catch {
+          // Ignore user info fetch errors during refresh
+        }
+        
         return newToken;
       } catch (error) {
         // Refresh failed — clear token and redirect to auth
         setAccessToken(null);
+        setUser(null);
         navigate("/auth");
         throw error;
       } finally {
@@ -67,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     refreshPromiseRef.current = promise;
     return promise;
-  }, [navigate]);
+  }, [navigate, fetchUserInfo]);
 
   /**
    * Login with email and password.
@@ -76,11 +114,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const response = await apiClient.post<TokenResponse>("/auth/login", { email, password });
-      setAccessToken(response.access_token);
+      const token = response.access_token;
+      setAccessToken(token);
+      
+      // Fetch user info
+      const userInfo = await fetchUserInfo(token);
+      setUser(userInfo);
+      
+      // Redirect based on onboarding status
+      if (!userInfo.is_onboarded) {
+        navigate("/onboarding");
+      } else {
+        navigate("/");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [navigate, fetchUserInfo]);
 
   /**
    * Register with email and password.
@@ -89,11 +139,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const response = await apiClient.post<TokenResponse>("/auth/register", { email, password });
-      setAccessToken(response.access_token);
+      const token = response.access_token;
+      setAccessToken(token);
+      
+      // Fetch user info
+      const userInfo = await fetchUserInfo(token);
+      setUser(userInfo);
+      
+      // After registration, always go to onboarding
+      navigate("/onboarding");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [navigate, fetchUserInfo]);
+
+  /**
+   * Complete onboarding and update user state.
+   */
+  const completeOnboarding = useCallback(async () => {
+    // Call the onboarding complete endpoint
+    // This is handled by the OnboardingPage component
+    // After completion, update user state
+    if (accessToken) {
+      try {
+        const userInfo = await fetchUserInfo(accessToken);
+        setUser(userInfo);
+      } catch {
+        // Ignore errors
+      }
+    }
+  }, [accessToken, fetchUserInfo]);
 
   /**
    * Logout and clear tokens.
@@ -106,6 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn("Logout error:", error);
     } finally {
       setAccessToken(null);
+      setUser(null);
       navigate("/auth");
     }
   }, [navigate]);
@@ -134,10 +210,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: AuthContextValue = {
     isAuthenticated,
     isLoading,
+    user,
     login,
     register,
     logout,
     accessToken,
+    completeOnboarding,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

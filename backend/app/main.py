@@ -16,6 +16,7 @@ from app.middleware import RequestLoggingMiddleware
 from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.health import router as health_router
+from app.routers.onboarding import router as onboarding_router
 
 # Configure logging
 logging.basicConfig(
@@ -112,6 +113,7 @@ def create_app() -> FastAPI:
     # --- Routers ---
     app.include_router(health_router)
     app.include_router(auth_router)
+    app.include_router(onboarding_router)
     app.include_router(admin_router)
 
     return app

@@ -15,6 +15,10 @@ from app.schemas.admin import (
     ImportReport,
     WordInput,
 )
+from app.schemas.onboarding import (
+    OnboardingRequest,
+    OnboardingResponse,
+)
 
 __all__ = [
     # Auth
@@ -30,4 +34,7 @@ __all__ = [
     "ErrorDetail",
     "ImportReport",
     "WordInput",
+    # Onboarding
+    "OnboardingRequest",
+    "OnboardingResponse",
 ]
