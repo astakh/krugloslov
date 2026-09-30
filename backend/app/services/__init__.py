@@ -1,5 +1,7 @@
 """Services package."""
 
+from app.services.admin_reports_service import AdminReportsService
+from app.services.admin_users_service import AdminUsersService
 from app.services.auth import AuthService
 from app.services.dashboard_service import DashboardService
 from app.services.dictionary_import import DictionaryImportService
@@ -27,6 +29,8 @@ from app.services.word_clustering import cluster_words
 
 __all__ = [
     "record_event",
+    "AdminReportsService",
+    "AdminUsersService",
     "AuthService",
     "DashboardService",
     "DictionaryImportService",

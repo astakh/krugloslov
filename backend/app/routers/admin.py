@@ -1,8 +1,8 @@
-"""Admin router for dictionary management."""
+"""Admin router for dictionary and user management."""
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy import select
@@ -12,6 +12,15 @@ from app.database import get_session
 from app.dependencies import require_admin
 from app.models.dictionary import Dictionary
 from app.schemas.admin import DryRunReport, ImportReport
+from app.schemas.admin_management import (
+    AdminReportsListResponse,
+    AdminUsersListResponse,
+    ProcessReportRequest,
+    ProcessReportResponse,
+    ResetPasswordResponse,
+)
+from app.services.admin_reports_service import AdminReportsService
+from app.services.admin_users_service import AdminUsersService
 from app.services.dictionary_import import DictionaryImportService
 
 router = APIRouter(prefix="/admin/dictionaries", tags=["admin"])
@@ -126,3 +135,90 @@ async def import_dictionary_dry_run(
         raise ValidationException(message=str(e))
 
     return report
+
+
+# === Reports Management ===
+
+reports_router = APIRouter(prefix="/admin/reports", tags=["admin"])
+
+
+@reports_router.get("", response_model=AdminReportsListResponse)
+async def list_reports(
+    status: Optional[str] = Query(None, description="Filter by status: new/processed"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get paginated list of user reports.
+    
+    Returns reports with exercise details, target words, and related LLM calls.
+    """
+    service = AdminReportsService(session, admin)
+    return await service.get_reports(status=status, page=page, page_size=page_size)
+
+
+@reports_router.patch("/{report_id}", response_model=ProcessReportResponse)
+async def process_report(
+    report_id: int,
+    request: ProcessReportRequest,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Process a report (mark as processed with admin note).
+    
+    Idempotent: processing same report with same note returns success.
+    """
+    service = AdminReportsService(session, admin)
+    message = await service.process_report(
+        report_id=report_id,
+        status=request.status,
+        admin_note=request.admin_note,
+    )
+    return ProcessReportResponse(message=message, report_id=report_id)
+
+
+# === Users Management ===
+
+users_router = APIRouter(prefix="/admin/users", tags=["admin"])
+
+
+@users_router.get("", response_model=AdminUsersListResponse)
+async def list_users(
+    search: Optional[str] = Query(None, description="Search by email"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get paginated list of users.
+    
+    Does not return password_hash or token information.
+    """
+    service = AdminUsersService(session, admin)
+    return await service.get_users(search=search, page=page, page_size=page_size)
+
+
+@users_router.post("/{user_id}/reset-password", response_model=ResetPasswordResponse)
+async def reset_user_password(
+    user_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Reset user's password and revoke all sessions.
+    
+    Generates a temporary password and returns it once.
+    All refresh tokens are revoked.
+    """
+    service = AdminUsersService(session, admin)
+    temporary_password, message = await service.reset_password(user_id)
+    
+    return ResetPasswordResponse(
+        message=message,
+        user_id=user_id,
+        temporary_password=temporary_password,
+    )

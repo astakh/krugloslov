@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.exceptions import AppException
 from app.middleware import RequestLoggingMiddleware
-from app.routers.admin import router as admin_router
+from app.routers.admin import reports_router, router as admin_router, users_router
 from app.routers.auth import router as auth_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.dictionaries import router as dictionaries_router
@@ -123,6 +123,8 @@ def create_app() -> FastAPI:
     app.include_router(onboarding_router)
     app.include_router(dashboard_router)
     app.include_router(admin_router)
+    app.include_router(reports_router)
+    app.include_router(users_router)
     app.include_router(lesson_router)
     app.include_router(vocabulary_router)
     app.include_router(profile_router)

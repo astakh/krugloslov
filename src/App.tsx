@@ -18,6 +18,8 @@ import WordDetailPage from "./pages/WordDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import LearningProfilePage from "./pages/LearningProfilePage";
 import AdminPage from "./pages/AdminPage";
+import AdminReportsPage from "./pages/AdminReportsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 
 // TanStack Query client
 const queryClient = new QueryClient({
@@ -51,6 +53,8 @@ const AppContent: React.FC = () => {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/learning-profile" element={<LearningProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
         </Routes>
       </main>
       <BottomNav />

@@ -159,6 +159,22 @@ const AdminPage: React.FC = () => {
     <div className="app-content py-8">
       <h1 className="text-2xl font-bold mb-6">Админка</h1>
 
+      {/* Navigation */}
+      <div className="flex gap-3 mb-6">
+        <button
+          onClick={() => navigate("/admin/reports")}
+          className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors"
+        >
+          Жалобы пользователей
+        </button>
+        <button
+          onClick={() => navigate("/admin/users")}
+          className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors"
+        >
+          Пользователи
+        </button>
+      </div>
+
       {/* Dictionaries List */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Словари</h2>

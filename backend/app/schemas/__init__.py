@@ -9,6 +9,16 @@ from app.schemas.admin import (
     ImportReport,
     WordInput,
 )
+from app.schemas.admin_management import (
+    AdminReportItem,
+    AdminReportsListResponse,
+    AdminUserItem,
+    AdminUsersListResponse,
+    ProcessReportRequest,
+    ProcessReportResponse,
+    ResetPasswordResponse,
+    TargetWordInfo,
+)
 from app.schemas.auth import (
     LoginRequest,
     RegisterRequest,
@@ -92,6 +102,15 @@ __all__ = [
     "ErrorDetail",
     "ImportReport",
     "WordInput",
+    # Admin Management
+    "AdminReportItem",
+    "AdminReportsListResponse",
+    "AdminUserItem",
+    "AdminUsersListResponse",
+    "ProcessReportRequest",
+    "ProcessReportResponse",
+    "ResetPasswordResponse",
+    "TargetWordInfo",
     # Onboarding
     "OnboardingRequest",
     "OnboardingResponse",
