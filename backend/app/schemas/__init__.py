@@ -1,11 +1,5 @@
 """Pydantic schemas for error responses and API contracts."""
 
-from app.schemas.auth import (
-    LoginRequest,
-    RegisterRequest,
-    TokenResponse,
-    UserInfo,
-)
 from app.schemas.admin import (
     DictionaryImportInput,
     DictionaryInput,
@@ -14,6 +8,20 @@ from app.schemas.admin import (
     ErrorDetail,
     ImportReport,
     WordInput,
+)
+from app.schemas.auth import (
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserInfo,
+)
+from app.schemas.dashboard import (
+    DashboardSummary,
+    DictionaryInfo,
+    ProfileInfo,
+    ResumeInfo,
+    StreakInfo,
+    WordsSummary,
 )
 from app.schemas.onboarding import (
     OnboardingRequest,
@@ -37,4 +45,11 @@ __all__ = [
     # Onboarding
     "OnboardingRequest",
     "OnboardingResponse",
+    # Dashboard
+    "DashboardSummary",
+    "DictionaryInfo",
+    "ProfileInfo",
+    "ResumeInfo",
+    "StreakInfo",
+    "WordsSummary",
 ]
