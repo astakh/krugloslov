@@ -23,6 +23,16 @@ from app.schemas.dashboard import (
     StreakInfo,
     WordsSummary,
 )
+from app.schemas.lesson import (
+    DeclineWordRequest,
+    DeclineWordResponse,
+    LimitReachedState,
+    NoWordsState,
+    ReadyState,
+    ResumeState,
+    WordInfo,
+    WordInfoWithTranslations,
+)
 from app.schemas.onboarding import (
     OnboardingRequest,
     OnboardingResponse,
@@ -52,4 +62,13 @@ __all__ = [
     "ResumeInfo",
     "StreakInfo",
     "WordsSummary",
+    # Lesson
+    "DeclineWordRequest",
+    "DeclineWordResponse",
+    "LimitReachedState",
+    "NoWordsState",
+    "ReadyState",
+    "ResumeState",
+    "WordInfo",
+    "WordInfoWithTranslations",
 ]

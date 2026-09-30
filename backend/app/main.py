@@ -17,6 +17,7 @@ from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.health import router as health_router
+from app.routers.lesson import router as lesson_router
 from app.routers.onboarding import router as onboarding_router
 
 # Configure logging
@@ -117,6 +118,7 @@ def create_app() -> FastAPI:
     app.include_router(onboarding_router)
     app.include_router(dashboard_router)
     app.include_router(admin_router)
+    app.include_router(lesson_router)
 
     return app
 
