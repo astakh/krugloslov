@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+/* Base styles */
+@layer base {
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 min-h-screen;
+  }
+
+  #root {
+    @apply min-h-screen flex flex-col;
+  }
+}
+
+/* Mobile-first layout: content column centered, max 640px on desktop */
+@layer components {
+  .app-content {
+    @apply w-full max-w-[640px] mx-auto px-4 flex-1;
+  }
+
+  .page-wrapper {
+    @apply flex flex-col min-h-screen;
+  }
+
+  .page-content {
+    @apply flex-1 pb-20; /* space for bottom nav */
+  }
+}
