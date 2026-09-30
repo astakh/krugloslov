@@ -1,8 +1,8 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "./contexts/AuthContext";
 import BottomNav from "./components/BottomNav";
-import { useAuthErrorHandler } from "./hooks/useAuthErrorHandler";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -23,8 +23,6 @@ const queryClient = new QueryClient({
 });
 
 const AppContent: React.FC = () => {
-  useAuthErrorHandler();
-
   return (
     <div className="page-wrapper">
       <main className="page-content">
@@ -47,7 +45,9 @@ const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AppContent />
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

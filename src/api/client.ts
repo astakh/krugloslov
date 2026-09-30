@@ -10,15 +10,29 @@ export interface ApiError {
 }
 
 /**
+ * Token provider function type.
+ */
+export type TokenProvider = () => string | null;
+
+/**
  * Base API client for communicating with the backend.
  */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 class ApiClient {
   private baseUrl: string;
+  private tokenProvider: TokenProvider | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Set a function that returns the current access token.
+   * This allows the client to get the token from React context.
+   */
+  setTokenProvider(provider: TokenProvider): void {
+    this.tokenProvider = provider;
   }
 
   private async request<T>(
@@ -28,18 +42,28 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
+    // Get access token if provider is set
+    const token = this.tokenProvider ? this.tokenProvider() : null;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(options?.headers as Record<string, string>),
+    };
+
+    // Add Authorization header if token is available
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(url, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
+      headers,
+      credentials: "include", // Include cookies for refresh token
       ...options,
     });
 
     if (response.status === 401) {
-      // Future: trigger token refresh or redirect to /auth
-      // For now, just dispatch a custom event
+      // Dispatch event for auth context to handle
       window.dispatchEvent(new CustomEvent("api:unauthorized"));
     }
 
