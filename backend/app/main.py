@@ -19,6 +19,7 @@ from app.routers.dashboard import router as dashboard_router
 from app.routers.health import router as health_router
 from app.routers.lesson import router as lesson_router
 from app.routers.onboarding import router as onboarding_router
+from app.routers.vocabulary import router as vocabulary_router
 
 # Configure logging
 logging.basicConfig(
@@ -119,6 +120,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router)
     app.include_router(admin_router)
     app.include_router(lesson_router)
+    app.include_router(vocabulary_router)
 
     return app
 

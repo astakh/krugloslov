@@ -58,6 +58,14 @@ from app.schemas.onboarding import (
     OnboardingRequest,
     OnboardingResponse,
 )
+from app.schemas.vocabulary import (
+    ChangeStatusRequest,
+    ChangeStatusResponse,
+    ContextHistoryItem,
+    VocabularyListResponse,
+    VocabularyWordDetail,
+    VocabularyWordItem,
+)
 
 __all__ = [
     # Auth
@@ -109,4 +117,11 @@ __all__ = [
     "CurrentExerciseResponse",
     "LessonSummaryResponse",
     "StreakSummary",
+    # Vocabulary
+    "ChangeStatusRequest",
+    "ChangeStatusResponse",
+    "ContextHistoryItem",
+    "VocabularyListResponse",
+    "VocabularyWordDetail",
+    "VocabularyWordItem",
 ]

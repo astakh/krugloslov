@@ -18,6 +18,7 @@ from app.services.sentence_validator import validate_sentence_group, validate_al
 from app.services.srs_service import calculate_srs, get_interval_for_stage
 from app.services.streak_service import calculate_streak, is_streak_at_risk
 from app.services.suggestion_service import SuggestionService
+from app.services.vocabulary_service import VocabularyService
 from app.services.word_clustering import cluster_words
 
 __all__ = [
@@ -36,6 +37,7 @@ __all__ = [
     "PromptService",
     "ReportService",
     "SuggestionService",
+    "VocabularyService",
     "calculate_streak",
     "is_streak_at_risk",
     "calculate_srs",

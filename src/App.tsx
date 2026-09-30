@@ -14,6 +14,7 @@ import ExercisePage from "./pages/ExercisePage";
 import ReviewPage from "./pages/ReviewPage";
 import ResumePage from "./pages/ResumePage";
 import LessonCompletePage from "./pages/LessonCompletePage";
+import WordDetailPage from "./pages/WordDetailPage";
 import AdminPage from "./pages/AdminPage";
 
 // TanStack Query client
@@ -44,6 +45,7 @@ const AppContent: React.FC = () => {
           <Route path="/lesson/:lessonId/complete" element={<LessonCompletePage />} />
           <Route path="/lesson/:lessonId/summary" element={<LessonCompletePage />} />
           <Route path="/lesson/*" element={<LessonPage />} />
+          <Route path="/vocabulary/word/:wordId" element={<WordDetailPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </main>
