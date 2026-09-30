@@ -9,6 +9,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import DictionaryPage from "./pages/DictionaryPage";
 import ProfilePage from "./pages/ProfilePage";
 import LessonPage from "./pages/LessonPage";
+import LessonPreviewPage from "./pages/LessonPreviewPage";
 import AdminPage from "./pages/AdminPage";
 
 // TanStack Query client
@@ -32,6 +33,7 @@ const AppContent: React.FC = () => {
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/dictionary" element={<DictionaryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/lesson/preview" element={<LessonPreviewPage />} />
           <Route path="/lesson/*" element={<LessonPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>

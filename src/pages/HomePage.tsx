@@ -62,10 +62,10 @@ const HomePage: React.FC = () => {
     if (!dashboard) return;
 
     if (dashboard.cta === "start") {
-      // TODO: Navigate to start lesson
-      navigate("/lesson/start");
+      // Navigate to lesson preview
+      navigate("/lesson/preview");
     } else if (dashboard.cta === "resume" && dashboard.resume) {
-      // TODO: Navigate to resume lesson
+      // Navigate to resume lesson
       navigate(`/lesson/${dashboard.resume.lesson_id}`);
     }
     // limit_reached doesn't have an action
