@@ -14,6 +14,14 @@ from app.schemas.admin_db import (
     TableDataResponse,
     TableInfo,
 )
+from app.schemas.admin_prompts import (
+    PromptDetail,
+    PromptHistoryItem,
+    PromptHistoryListResponse,
+    PromptListItem,
+    PromptUpdateRequest,
+    RollbackRequest,
+)
 from app.schemas.admin_management import (
     AdminReportItem,
     AdminReportsListResponse,
@@ -120,6 +128,13 @@ __all__ = [
     "ColumnInfo",
     "TableDataResponse",
     "TableInfo",
+    # Admin Prompts
+    "PromptDetail",
+    "PromptHistoryItem",
+    "PromptHistoryListResponse",
+    "PromptListItem",
+    "PromptUpdateRequest",
+    "RollbackRequest",
     # Onboarding
     "OnboardingRequest",
     "OnboardingResponse",

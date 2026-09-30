@@ -1,6 +1,7 @@
 """Services package."""
 
 from app.services.admin_db_service import AdminDbService
+from app.services.admin_prompts_service import AdminPromptsService
 from app.services.admin_reports_service import AdminReportsService
 from app.services.admin_users_service import AdminUsersService
 from app.services.auth import AuthService
@@ -31,6 +32,7 @@ from app.services.word_clustering import cluster_words
 __all__ = [
     "record_event",
     "AdminDbService",
+    "AdminPromptsService",
     "AdminReportsService",
     "AdminUsersService",
     "AuthService",

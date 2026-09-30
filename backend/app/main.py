@@ -15,6 +15,7 @@ from app.exceptions import AppException
 from app.middleware import RequestLoggingMiddleware
 from app.routers.admin import reports_router, router as admin_router, users_router
 from app.routers.admin_db import router as admin_db_router
+from app.routers.admin_prompts import router as admin_prompts_router
 from app.routers.auth import router as auth_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.dictionaries import router as dictionaries_router
@@ -127,6 +128,7 @@ def create_app() -> FastAPI:
     app.include_router(reports_router)
     app.include_router(users_router)
     app.include_router(admin_db_router)
+    app.include_router(admin_prompts_router)
     app.include_router(lesson_router)
     app.include_router(vocabulary_router)
     app.include_router(profile_router)
