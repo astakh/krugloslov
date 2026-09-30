@@ -44,6 +44,12 @@ from app.schemas.lesson_evaluate import (
     WordEvaluation,
     SuggestedWord,
 )
+from app.schemas.lesson_resume import (
+    AbandonResponse,
+    CurrentExerciseResponse,
+    LessonSummaryResponse,
+    StreakSummary,
+)
 from app.schemas.lesson_start import (
     LessonStartRequest,
     LessonStartResponse,
@@ -98,4 +104,9 @@ __all__ = [
     "SuggestionActionResponse",
     "WordEvaluation",
     "SuggestedWord",
+    # Lesson Resume
+    "AbandonResponse",
+    "CurrentExerciseResponse",
+    "LessonSummaryResponse",
+    "StreakSummary",
 ]

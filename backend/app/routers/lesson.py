@@ -20,10 +20,17 @@ from app.schemas.lesson_evaluate import (
     SuggestionActionRequest,
     SuggestionActionResponse,
 )
+from app.schemas.lesson_resume import (
+    AbandonResponse,
+    CurrentExerciseResponse,
+    LessonSummaryResponse,
+)
 from app.schemas.lesson_start import LessonStartRequest, LessonStartResponse
 from app.services.lesson_exercise_service import LessonExerciseService
 from app.services.lesson_preview_service import LessonPreviewService
+from app.services.lesson_resume_service import LessonResumeService
 from app.services.lesson_start_service import LessonStartService
+from app.services.lesson_summary_service import LessonSummaryService
 from app.services.suggestion_service import SuggestionService
 from app.services.report_service import ReportService
 
@@ -164,3 +171,53 @@ async def report_exercise(
     """
     service = ReportService(session, current_user.id)
     return await service.report_exercise(exercise_id, request.reason, request.comment)
+
+
+@router.get("/{lesson_id}/current", response_model=CurrentExerciseResponse)
+async def get_current_exercise(
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get current pending exercise for a lesson.
+    
+    Returns the first pending exercise with progress information.
+    Raises 409 if lesson is completed or abandoned.
+    """
+    service = LessonResumeService(session, current_user.id)
+    return await service.get_current_exercise(lesson_id)
+
+
+@router.post("/{lesson_id}/abandon", response_model=AbandonResponse)
+async def abandon_lesson(
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Abandon a lesson.
+    
+    Marks lesson as abandoned. Does not return daily limit.
+    Does not revert SRS changes for processed words.
+    Idempotent: returns success if already abandoned.
+    """
+    service = LessonResumeService(session, current_user.id)
+    message = await service.abandon_lesson(lesson_id)
+    return AbandonResponse(message=message)
+
+
+@router.get("/{lesson_id}/summary", response_model=LessonSummaryResponse)
+async def get_lesson_summary(
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get lesson summary with statistics.
+    
+    Only available for completed lessons.
+    Includes word statistics and streak information.
+    """
+    service = LessonSummaryService(session, current_user)
+    return await service.get_summary(lesson_id)

@@ -12,6 +12,8 @@ import LessonPage from "./pages/LessonPage";
 import LessonPreviewPage from "./pages/LessonPreviewPage";
 import ExercisePage from "./pages/ExercisePage";
 import ReviewPage from "./pages/ReviewPage";
+import ResumePage from "./pages/ResumePage";
+import LessonCompletePage from "./pages/LessonCompletePage";
 import AdminPage from "./pages/AdminPage";
 
 // TanStack Query client
@@ -38,6 +40,9 @@ const AppContent: React.FC = () => {
           <Route path="/lesson/preview" element={<LessonPreviewPage />} />
           <Route path="/lesson/:lessonId/exercise/:exerciseId" element={<ExercisePage />} />
           <Route path="/lesson/:lessonId/review/:exerciseId" element={<ReviewPage />} />
+          <Route path="/lesson/:lessonId/resume" element={<ResumePage />} />
+          <Route path="/lesson/:lessonId/complete" element={<LessonCompletePage />} />
+          <Route path="/lesson/:lessonId/summary" element={<LessonCompletePage />} />
           <Route path="/lesson/*" element={<LessonPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>

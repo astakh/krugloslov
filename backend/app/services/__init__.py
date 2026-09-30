@@ -7,7 +7,9 @@ from app.services.events import record_event
 from app.services.evaluate_translation_service import EvaluateTranslationService
 from app.services.lesson_exercise_service import LessonExerciseService
 from app.services.lesson_preview_service import LessonPreviewService
+from app.services.lesson_resume_service import LessonResumeService
 from app.services.lesson_start_service import LessonStartService
+from app.services.lesson_summary_service import LessonSummaryService
 from app.services.llm_logger import LlmLogger
 from app.services.onboarding import OnboardingService
 from app.services.prompt_service import PromptService
@@ -26,7 +28,9 @@ __all__ = [
     "EvaluateTranslationService",
     "LessonExerciseService",
     "LessonPreviewService",
+    "LessonResumeService",
     "LessonStartService",
+    "LessonSummaryService",
     "LlmLogger",
     "OnboardingService",
     "PromptService",
