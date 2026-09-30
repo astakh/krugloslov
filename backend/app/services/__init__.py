@@ -17,7 +17,11 @@ from app.services.report_service import ReportService
 from app.services.sentence_validator import validate_sentence_group, validate_all_groups
 from app.services.srs_service import calculate_srs, get_interval_for_stage
 from app.services.streak_service import calculate_streak, is_streak_at_risk
+from app.services.dictionaries_service import DictionariesService
+from app.services.learning_profile_service import LearningProfileService
+from app.services.profile_stats_service import ProfileStatsService
 from app.services.suggestion_service import SuggestionService
+from app.services.timezone_service import TimezoneService
 from app.services.vocabulary_service import VocabularyService
 from app.services.word_clustering import cluster_words
 
@@ -26,7 +30,9 @@ __all__ = [
     "AuthService",
     "DashboardService",
     "DictionaryImportService",
+    "DictionariesService",
     "EvaluateTranslationService",
+    "LearningProfileService",
     "LessonExerciseService",
     "LessonPreviewService",
     "LessonResumeService",
@@ -34,9 +40,11 @@ __all__ = [
     "LessonSummaryService",
     "LlmLogger",
     "OnboardingService",
+    "ProfileStatsService",
     "PromptService",
     "ReportService",
     "SuggestionService",
+    "TimezoneService",
     "VocabularyService",
     "calculate_streak",
     "is_streak_at_risk",

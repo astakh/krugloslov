@@ -58,6 +58,17 @@ from app.schemas.onboarding import (
     OnboardingRequest,
     OnboardingResponse,
 )
+from app.schemas.profile import (
+    DictionaryListItem,
+    DictionariesListResponse,
+    HeatmapDay,
+    LearningProfileResponse,
+    LearningProfileUpdateRequest,
+    LearningProfileUpdateResponse,
+    LearningStats,
+    ProfileStatsResponse,
+    WordsByStatus,
+)
 from app.schemas.vocabulary import (
     ChangeStatusRequest,
     ChangeStatusResponse,
@@ -124,4 +135,14 @@ __all__ = [
     "VocabularyListResponse",
     "VocabularyWordDetail",
     "VocabularyWordItem",
+    # Profile
+    "DictionaryListItem",
+    "DictionariesListResponse",
+    "HeatmapDay",
+    "LearningProfileResponse",
+    "LearningProfileUpdateRequest",
+    "LearningProfileUpdateResponse",
+    "LearningStats",
+    "ProfileStatsResponse",
+    "WordsByStatus",
 ]
