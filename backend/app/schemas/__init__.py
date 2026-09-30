@@ -1,19 +1,33 @@
-"""Pydantic schemas for error responses."""
+"""Pydantic schemas for error responses and API contracts."""
 
-from __future__ import annotations
+from app.schemas.auth import (
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserInfo,
+)
+from app.schemas.admin import (
+    DictionaryImportInput,
+    DictionaryInput,
+    DictionaryReport,
+    DryRunReport,
+    ErrorDetail,
+    ImportReport,
+    WordInput,
+)
 
-from typing import Any, Dict, Optional
-
-from pydantic import BaseModel
-
-
-class ErrorDetail(BaseModel):
-    """Single error object in the unified error format."""
-    code: str
-    message: str
-    details: Optional[Dict[str, Any]] = None
-
-
-class ErrorResponse(BaseModel):
-    """Unified error response envelope."""
-    error: ErrorDetail
+__all__ = [
+    # Auth
+    "LoginRequest",
+    "RegisterRequest",
+    "TokenResponse",
+    "UserInfo",
+    # Admin
+    "DictionaryImportInput",
+    "DictionaryInput",
+    "DictionaryReport",
+    "DryRunReport",
+    "ErrorDetail",
+    "ImportReport",
+    "WordInput",
+]

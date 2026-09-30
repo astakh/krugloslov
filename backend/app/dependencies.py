@@ -96,3 +96,25 @@ async def get_refresh_token_from_cookie(
     if not refresh_token:
         raise UnauthorizedException(message="Refresh token отсутствует")
     return refresh_token
+
+
+async def require_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Dependency to require admin privileges.
+
+    Args:
+        current_user: The authenticated user.
+
+    Returns:
+        The admin User object.
+
+    Raises:
+        ForbiddenException: If user is not an admin.
+    """
+    from app.exceptions import ForbiddenException
+    
+    if not current_user.is_admin:
+        raise ForbiddenException(message="Доступ запрещён. Требуются права администратора.")
+    
+    return current_user

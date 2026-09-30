@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "dictionary": {
+    "code": "general",
+    "name": "General English",
+    "description": "Общий словарь базовых английских слов",
+    "is_general": true
+  },
+  "words": [
+    {
+      "lemma": "hello",
+      "pos": "intj",
+      "level": "A1",
+      "translations": ["привет", "здравствуйте"]
+    },
+    {
+      "lemma": "world",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["мир", "свет"]
+    },
+    {
+      "lemma": "good",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["хороший", "добрый"]
+    },
+    {
+      "lemma": "bad",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["плохой", "дурной"]
+    },
+    {
+      "lemma": "big",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["большой", "крупный"]
+    },
+    {
+      "lemma": "small",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["маленький", "небольшой"]
+    },
+    {
+      "lemma": "house",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["дом", "жилище"]
+    },
+    {
+      "lemma": "cat",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["кот", "кошка"]
+    },
+    {
+      "lemma": "dog",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["собака", "пёс"]
+    },
+    {
+      "lemma": "run",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["бежать", "бегать"]
+    },
+    {
+      "lemma": "walk",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["идти", "гулять"]
+    },
+    {
+      "lemma": "eat",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["есть", "кушать"]
+    },
+    {
+      "lemma": "drink",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["пить"]
+    },
+    {
+      "lemma": "water",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["вода"]
+    },
+    {
+      "lemma": "food",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["еда", "пища"]
+    },
+    {
+      "lemma": "book",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["книга"]
+    },
+    {
+      "lemma": "read",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["читать", "прочитать"]
+    },
+    {
+      "lemma": "write",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["писать", "написать"]
+    },
+    {
+      "lemma": "speak",
+      "pos": "verb",
+      "level": "A2",
+      "translations": ["говорить", "разговаривать"]
+    },
+    {
+      "lemma": "listen",
+      "pos": "verb",
+      "level": "A2",
+      "translations": ["слушать", "слушать"]
+    },
+    {
+      "lemma": "understand",
+      "pos": "verb",
+      "level": "A2",
+      "translations": ["понимать", "разобраться"]
+    },
+    {
+      "lemma": "learn",
+      "pos": "verb",
+      "level": "A2",
+      "translations": ["учить", "изучать"]
+    },
+    {
+      "lemma": "study",
+      "pos": "verb",
+      "level": "A2",
+      "translations": ["учиться", "изучать"]
+    },
+    {
+      "lemma": "teach",
+      "pos": "verb",
+      "level": "A2",
+      "translations": ["учить", "преподавать"]
+    },
+    {
+      "lemma": "work",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["работать", "трудиться"]
+    },
+    {
+      "lemma": "play",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["играть", "поиграть"]
+    },
+    {
+      "lemma": "sleep",
+      "pos": "verb",
+      "level": "A1",
+      "translations": ["спать", "уснуть"]
+    },
+    {
+      "lemma": "time",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["время"]
+    },
+    {
+      "lemma": "day",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["день", "сутки"]
+    },
+    {
+      "lemma": "night",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["ночь"]
+    },
+    {
+      "lemma": "morning",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["утро"]
+    },
+    {
+      "lemma": "evening",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["вечер"]
+    },
+    {
+      "lemma": "year",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["год"]
+    },
+    {
+      "lemma": "month",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["месяц"]
+    },
+    {
+      "lemma": "week",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["неделя"]
+    },
+    {
+      "lemma": "friend",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["друг", "подруга"]
+    },
+    {
+      "lemma": "family",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["семья"]
+    },
+    {
+      "lemma": "mother",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["мать", "мама"]
+    },
+    {
+      "lemma": "father",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["отец", "папа"]
+    },
+    {
+      "lemma": "child",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["ребёнок", "дитя"]
+    },
+    {
+      "lemma": "man",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["мужчина", "человек"]
+    },
+    {
+      "lemma": "woman",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["женщина"]
+    },
+    {
+      "lemma": "boy",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["мальчик", "парень"]
+    },
+    {
+      "lemma": "girl",
+      "pos": "noun",
+      "level": "A1",
+      "translations": ["девочка", "девушка"]
+    },
+    {
+      "lemma": "happy",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["счастливый", "радостный"]
+    },
+    {
+      "lemma": "sad",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["грустный", "печальный"]
+    },
+    {
+      "lemma": "fast",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["быстрый", "скорый"]
+    },
+    {
+      "lemma": "slow",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["медленный"]
+    },
+    {
+      "lemma": "hot",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["горячий", "жаркий"]
+    },
+    {
+      "lemma": "cold",
+      "pos": "adj",
+      "level": "A1",
+      "translations": ["холодный"]
+    }
+  ]
+}
