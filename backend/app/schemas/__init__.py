@@ -9,6 +9,11 @@ from app.schemas.admin import (
     ImportReport,
     WordInput,
 )
+from app.schemas.admin_db import (
+    ColumnInfo,
+    TableDataResponse,
+    TableInfo,
+)
 from app.schemas.admin_management import (
     AdminReportItem,
     AdminReportsListResponse,
@@ -111,6 +116,10 @@ __all__ = [
     "ProcessReportResponse",
     "ResetPasswordResponse",
     "TargetWordInfo",
+    # Admin DB
+    "ColumnInfo",
+    "TableDataResponse",
+    "TableInfo",
     # Onboarding
     "OnboardingRequest",
     "OnboardingResponse",

@@ -173,6 +173,12 @@ const AdminPage: React.FC = () => {
         >
           Пользователи
         </button>
+        <button
+          onClick={() => navigate("/admin/db")}
+          className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-colors"
+        >
+          База данных
+        </button>
       </div>
 
       {/* Dictionaries List */}
