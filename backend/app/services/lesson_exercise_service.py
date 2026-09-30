@@ -86,11 +86,20 @@ class LessonExerciseService:
         
         # Evaluate translation using LLM
         eval_service = EvaluateTranslationService(self.session, self.user_id)
-        word_evaluations, suggested_words = await eval_service.evaluate(
-            exercise_id=exercise_id,
-            user_translation=user_translation,
-            dont_know=dont_know
-        )
+        try:
+            word_evaluations, suggested_words = await eval_service.evaluate(
+                exercise_id=exercise_id,
+                user_translation=user_translation,
+                dont_know=dont_know
+            )
+        except AppException as e:
+            # Record LLM error event
+            await self._create_event("llm_error", {
+                "exercise_id": exercise_id,
+                "error_code": e.code,
+                "error_message": e.message,
+            })
+            raise
         
         # Start transaction for writing results
         async with self.session.begin():
