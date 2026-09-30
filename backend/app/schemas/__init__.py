@@ -33,6 +33,21 @@ from app.schemas.lesson import (
     WordInfo,
     WordInfoWithTranslations,
 )
+from app.schemas.lesson_evaluate import (
+    EvaluateRequest,
+    EvaluateResponse,
+    ExerciseResultResponse,
+    ReportRequest,
+    ReportResponse,
+    SuggestionActionRequest,
+    SuggestionActionResponse,
+    WordEvaluation,
+    SuggestedWord,
+)
+from app.schemas.lesson_start import (
+    LessonStartRequest,
+    LessonStartResponse,
+)
 from app.schemas.onboarding import (
     OnboardingRequest,
     OnboardingResponse,
@@ -71,4 +86,16 @@ __all__ = [
     "ResumeState",
     "WordInfo",
     "WordInfoWithTranslations",
+    "LessonStartRequest",
+    "LessonStartResponse",
+    # Lesson Evaluate
+    "EvaluateRequest",
+    "EvaluateResponse",
+    "ExerciseResultResponse",
+    "ReportRequest",
+    "ReportResponse",
+    "SuggestionActionRequest",
+    "SuggestionActionResponse",
+    "WordEvaluation",
+    "SuggestedWord",
 ]

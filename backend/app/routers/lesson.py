@@ -11,9 +11,21 @@ from app.dependencies import get_current_user
 from app.exceptions import AppException
 from app.models.user import User
 from app.schemas.lesson import DeclineWordRequest, DeclineWordResponse
+from app.schemas.lesson_evaluate import (
+    EvaluateRequest,
+    EvaluateResponse,
+    ExerciseResultResponse,
+    ReportRequest,
+    ReportResponse,
+    SuggestionActionRequest,
+    SuggestionActionResponse,
+)
 from app.schemas.lesson_start import LessonStartRequest, LessonStartResponse
+from app.services.lesson_exercise_service import LessonExerciseService
 from app.services.lesson_preview_service import LessonPreviewService
 from app.services.lesson_start_service import LessonStartService
+from app.services.suggestion_service import SuggestionService
+from app.services.report_service import ReportService
 
 router = APIRouter(prefix="/lesson", tags=["lesson"])
 
@@ -83,3 +95,72 @@ async def decline_new_word(
         message="Слово успешно отклонено",
         preview=preview,
     )
+
+
+@router.post("/evaluate", response_model=EvaluateResponse)
+async def evaluate_exercise(
+    request: EvaluateRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Evaluate user translation for an exercise.
+    
+    Uses LLM to check translation accuracy and update SRS.
+    """
+    service = LessonExerciseService(session, current_user.id)
+    return await service.evaluate_exercise(
+        exercise_id=request.exercise_id,
+        user_translation=request.user_translation,
+        dont_know=request.dont_know or False
+    )
+
+
+@router.get("/{lesson_id}/exercises/{exercise_id}/result", response_model=ExerciseResultResponse)
+async def get_exercise_result(
+    lesson_id: int,
+    exercise_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get cached result for an evaluated exercise.
+    
+    Used to restore review screen after page reload.
+    """
+    service = LessonExerciseService(session, current_user.id)
+    return await service.get_exercise_result(lesson_id, exercise_id)
+
+
+@router.post("/exercises/{exercise_id}/suggestions/{word_id}", response_model=SuggestionActionResponse)
+async def handle_suggestion(
+    exercise_id: int,
+    word_id: int,
+    request: SuggestionActionRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Add or ignore a suggested word.
+    
+    - add: Create user_word and mark suggestion as added
+    - ignore: Mark suggestion as ignored
+    """
+    service = SuggestionService(session, current_user.id)
+    return await service.handle_suggestion(exercise_id, word_id, request.action)
+
+
+@router.post("/exercises/{exercise_id}/report", response_model=ReportResponse)
+async def report_exercise(
+    exercise_id: int,
+    request: ReportRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Report an exercise with a reason and comment.
+    
+    Creates or updates a report for the exercise.
+    """
+    service = ReportService(session, current_user.id)
+    return await service.report_exercise(exercise_id, request.reason, request.comment)
