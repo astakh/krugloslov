@@ -117,7 +117,7 @@ class ProfileStatsService:
         
         if days:
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
-            query = query.where(Lesson.evaluated_at >= cutoff_date)
+            query = query.where(Lesson.completed_at >= cutoff_date)
         else:
             query = query.where(Lesson.learning_profile_id == profile.id)
         

@@ -176,7 +176,7 @@ class LearningProfileService:
         
         if days:
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
-            query = query.where(Lesson.evaluated_at >= cutoff_date)
+            query = query.where(Lesson.completed_at >= cutoff_date)
         
         result = await self.session.execute(query)
         row = result.first()
