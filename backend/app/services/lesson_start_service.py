@@ -673,11 +673,16 @@ Groups:
         return True
     
     async def _get_first_exercise(self, lesson_id: int) -> LessonExercise:
-        """Get first exercise for lesson."""
+        """Get first exercise for lesson with eager loading."""
+        from sqlalchemy.orm import selectinload
+        
         result = await self.session.execute(
             select(LessonExercise)
             .where(LessonExercise.lesson_id == lesson_id)
             .order_by(LessonExercise.order_index)
+            .options(
+                selectinload(LessonExercise.exercise_words).selectinload(LessonExerciseWord.word)
+            )
         )
         return result.scalars().first()
     
