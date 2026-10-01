@@ -345,12 +345,19 @@ class LessonStartService:
         timeout: float,
     ) -> List[dict]:
         """Generate sentences via LLM with validation and retries."""
+        logger.info(f"Starting sentence generation for {len(groups)} groups, timeout={timeout}s")
+        
+        # Track start time for timeout
+        start_time = time.time()
+        
         # Get word info
         word_info = await self._get_word_info(word_ids)
+        logger.debug(f"Retrieved word info for {len(word_ids)} words")
         
         # Get prompt
         prompt_service = PromptService(self.session)
         template = await prompt_service.get_prompt("generate_sentences")
+        logger.debug(f"Loaded prompt template: {template[:100]}...")
         
         # Prepare groups for LLM
         llm_groups = []
@@ -387,6 +394,8 @@ Groups:
             {"role": "user", "content": user_prompt},
         ]
         
+        logger.info(f"Prepared messages for LLM: system={len(system_prompt)} chars, user={len(user_prompt)} chars")
+        
         # Call LLM with retries
         max_retries = 2
         valid_groups = []
@@ -396,19 +405,25 @@ Groups:
             if not invalid_group_indices:
                 break
             
-            # Check timeout
-            if time.time() - timeout > 0:
-                raise LlmUnavailable("Timeout exceeded")
+            # Check timeout - FIXED: compare elapsed time with timeout
+            elapsed = time.time() - start_time
+            logger.debug(f"Attempt {attempt + 1}/{max_retries + 1}, elapsed={elapsed:.2f}s, timeout={timeout}s")
+            
+            if elapsed > timeout:
+                logger.error(f"Timeout exceeded: {elapsed:.2f}s > {timeout}s")
+                raise LlmUnavailable(f"Timeout exceeded: {elapsed:.2f}s > {timeout}s")
             
             try:
+                logger.info(f"Calling GigaChat API (attempt {attempt + 1})")
                 response = await gigachat_client.chat_json(
                     messages=messages,
                     validator=LlmGenerateResponse,
                     temperature=settings.GEN_TEMPERATURE,
                     max_tokens=2000,
-                    timeout=min(timeout, 25.0),
+                    timeout=min(timeout - elapsed, 25.0),  # Use remaining time
                     max_retries=1,
                 )
+                logger.info(f"LLM response received successfully")
                 
                 # Validate groups
                 expected_groups = [
@@ -416,11 +431,15 @@ Groups:
                     for idx in invalid_group_indices
                 ]
                 
+                logger.debug(f"Validating {len(response.groups)} groups from LLM response")
+                
                 valid_indices, new_invalid_indices = validate_all_groups(
                     groups=response.groups,
                     expected_groups=expected_groups,
                     avoid_sentences=avoid_sentences,
                 )
+                
+                logger.info(f"Validation result: {len(valid_indices)} valid, {len(new_invalid_indices)} invalid")
                 
                 # Collect valid groups
                 for idx in valid_indices:
@@ -429,13 +448,26 @@ Groups:
                 # Update invalid indices for next retry
                 invalid_group_indices = [invalid_group_indices[i] for i in new_invalid_indices]
                 
-            except LlmInvalidResponse:
+            except LlmInvalidResponse as e:
+                logger.warning(f"LLM returned invalid response: {e}")
+                if attempt == max_retries:
+                    logger.error(f"Max retries reached, raising LlmInvalidResponse")
+                    raise
+                logger.info(f"Retrying after invalid response...")
+                continue
+            except LlmError as e:
+                logger.error(f"LLM error on attempt {attempt + 1}: {type(e).__name__}: {e}")
                 if attempt == max_retries:
                     raise
+                logger.info(f"Retrying after LLM error...")
                 continue
         
         if invalid_group_indices:
+            logger.error(f"Failed to generate valid sentences for groups: {invalid_group_indices}")
             raise LlmInvalidResponse(f"Failed to generate valid sentences for groups: {invalid_group_indices}")
+        
+        total_elapsed = time.time() - start_time
+        logger.info(f"Sentence generation completed successfully in {total_elapsed:.2f}s, generated {len(valid_groups)} groups")
         
         return [g.model_dump() for g in valid_groups]
     

@@ -77,25 +77,36 @@ class GigaChatClient:
     
     async def _refresh_token(self) -> None:
         """Refresh OAuth token from GigaChat."""
+        logger.info(f"Refreshing GigaChat token from {self.OAUTH_URL}")
+        
         async with httpx.AsyncClient(verify=self._ssl_context or True) as client:
             try:
+                headers = {
+                    "Authorization": f"Basic {settings.GIGACHAT_AUTH_KEY}",
+                    "RqUID": str(uuid.uuid4()),
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json",
+                }
+                
+                logger.debug(f"OAuth request headers: Authorization=Basic ***{settings.GIGACHAT_AUTH_KEY[-10:]}, RqUID={headers['RqUID']}, scope={settings.GIGACHAT_SCOPE}")
+                
                 response = await client.post(
                     self.OAUTH_URL,
-                    headers={
-                        "Authorization": f"Basic {settings.GIGACHAT_AUTH_KEY}",
-                        "RqUID": str(uuid.uuid4()),
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "Accept": "application/json",
-                    },
+                    headers=headers,
                     data={"scope": settings.GIGACHAT_SCOPE},
                     timeout=float(settings.LLM_TOKEN_TIMEOUT),
                 )
                 
+                logger.info(f"OAuth response status: {response.status_code}")
+                
                 if response.status_code != 200:
                     logger.error(f"Failed to get GigaChat token: {response.status_code}")
-                    raise LlmUnavailable("Failed to authenticate with GigaChat")
+                    logger.error(f"Response body: {response.text}")
+                    raise LlmUnavailable(f"Failed to authenticate with GigaChat: {response.status_code}")
                 
                 data = response.json()
+                logger.debug(f"OAuth response data keys: {list(data.keys())}")
+                
                 access_token = data["access_token"]
                 expires_at = datetime.fromtimestamp(
                     data["expires_at"] / 1000,  # milliseconds to seconds
@@ -138,9 +149,24 @@ class GigaChatClient:
         # Use configured timeout or provided timeout, whichever is larger
         effective_timeout = max(timeout, settings.LLM_REQUEST_TIMEOUT)
         
+        logger.info(f"Sending chat request to {self.CHAT_URL}")
+        logger.debug(f"Request params: model={settings.GIGACHAT_MODEL}, temperature={temperature}, max_tokens={max_tokens}, timeout={effective_timeout}s")
+        logger.debug(f"Messages count: {len(messages)}")
+        
         async with self._semaphore:
             async with httpx.AsyncClient(verify=self._ssl_context or True) as client:
                 try:
+                    request_data = {
+                        "model": settings.GIGACHAT_MODEL,
+                        "messages": messages,
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                        "stream": False,
+                    }
+                    
+                    logger.debug(f"Request payload: {json.dumps(request_data, ensure_ascii=False)[:500]}...")
+                    
+                    start_time = time.time()
                     response = await client.post(
                         self.CHAT_URL,
                         headers={
@@ -148,15 +174,16 @@ class GigaChatClient:
                             "Content-Type": "application/json",
                             "Accept": "application/json",
                         },
-                        json={
-                            "model": settings.GIGACHAT_MODEL,
-                            "messages": messages,
-                            "temperature": temperature,
-                            "max_tokens": max_tokens,
-                            "stream": False,
-                        },
+                        json=request_data,
                         timeout=float(effective_timeout),
                     )
+                    elapsed = time.time() - start_time
+                    
+                    logger.info(f"Chat response status: {response.status_code} (elapsed: {elapsed:.2f}s)")
+                    
+                    if response.status_code != 200:
+                        logger.error(f"Chat API error: {response.status_code}")
+                        logger.error(f"Response body: {response.text[:500]}")
                     
                     # Handle HTTP errors
                     if response.status_code == 401:
