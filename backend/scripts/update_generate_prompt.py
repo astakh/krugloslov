@@ -1,18 +1,8 @@
-"""
-Script to update the generate_sentences prompt in the database.
-
-This script updates the prompt to match the expected JSON schema format.
-"""
+"""Script to update generate_sentences prompt in database."""
 
 import asyncio
-import sys
-from pathlib import Path
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.config import settings
 from app.models import Prompt
@@ -20,14 +10,16 @@ from app.models import Prompt
 
 NEW_PROMPT = """You are an English language teacher. Generate English sentences for a student at {level} level.
 
+CRITICAL REQUIREMENT: For each word group, you MUST create ONE sentence that contains ALL the target words from that group. Every single word in the group must appear in the sentence.
+
 For each word group provided, create ONE natural English sentence that:
-- Contains all the target words from that group
+- Contains ALL the target words from that group (this is mandatory - do not skip any words)
 - Uses vocabulary appropriate for {level} level
 - Is 5-15 words long
 - Is contextually appropriate and natural
 
 For each sentence, also provide:
-- The exact surface form of each target word as used in the sentence
+- The exact surface form of each target word as used in the sentence (the actual word form, not the lemma)
 - A Russian translation of the complete sentence
 
 Return JSON format EXACTLY as shown:
@@ -35,7 +27,7 @@ Return JSON format EXACTLY as shown:
   "groups": [
     {{
       "group_index": 0,
-      "sentence": "English sentence with target words",
+      "sentence": "English sentence with ALL target words",
       "reference_translation": "Russian translation of the sentence",
       "words": [
         {{
@@ -48,67 +40,48 @@ Return JSON format EXACTLY as shown:
   ]
 }}
 
-IMPORTANT: 
+CRITICAL RULES:
 - Use "groups" as the root key, NOT "sentences"
 - Each group must have: group_index, sentence, reference_translation, words
-- words array must contain all target words for that group with their surface forms
+- The sentence MUST contain ALL words from the group - no exceptions
+- words array must contain ALL target words for that group with their surface forms
+- The number of words in the words array must match the number of target words provided
 - Return ONLY valid JSON, no markdown, no explanations"""
 
 
 async def update_prompt():
-    """Update the generate_sentences prompt in the database."""
-    print("Connecting to database...")
-    
+    """Update generate_sentences prompt in database."""
     engine = create_async_engine(settings.DATABASE_URL, echo=False)
     
-    try:
-        async with engine.begin() as conn:
-            # Check if prompt exists
-            result = await conn.execute(
-                select(Prompt).where(Prompt.key == "generate_sentences")
+    async with engine.begin() as conn:
+        # Check if prompt exists
+        result = await conn.execute(
+            select(Prompt).where(Prompt.key == "generate_sentences")
+        )
+        prompt = result.scalar_one_or_none()
+        
+        if prompt:
+            # Update existing prompt
+            await conn.execute(
+                update(Prompt)
+                .where(Prompt.key == "generate_sentences")
+                .values(system_template=NEW_PROMPT)
             )
-            existing_prompt = result.scalar_one_or_none()
-            
-            if existing_prompt:
-                print(f"✅ Found existing prompt 'generate_sentences'")
-                print(f"   Current length: {len(existing_prompt.system_template)} chars")
-                
-                # Update the prompt
-                await conn.execute(
-                    update(Prompt)
-                    .where(Prompt.key == "generate_sentences")
-                    .values(system_template=NEW_PROMPT)
-                )
-                
-                print(f"✅ Updated prompt 'generate_sentences'")
-                print(f"   New length: {len(NEW_PROMPT)} chars")
-            else:
-                print(f"❌ Prompt 'generate_sentences' not found in database")
-                print(f"   Please run migrations first: alembic upgrade head")
-                return False
-        
-        print("\n✅ Prompt updated successfully!")
-        print("\nNext steps:")
-        print("1. Restart the backend server")
-        print("2. Try starting a lesson again")
-        return True
-        
-    except Exception as e:
-        print(f"\n❌ Error updating prompt: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-    finally:
-        await engine.dispose()
+            print("✅ Updated existing prompt 'generate_sentences'")
+        else:
+            # Create new prompt
+            from app.models import Prompt as PromptModel
+            new_prompt = PromptModel(
+                key="generate_sentences",
+                system_template=NEW_PROMPT,
+                updated_by=None
+            )
+            conn.add(new_prompt)
+            print("✅ Created new prompt 'generate_sentences'")
+    
+    await engine.dispose()
+    print("✅ Prompt update completed")
 
 
 if __name__ == "__main__":
-    print("="*60)
-    print("Update generate_sentences prompt")
-    print("="*60)
-    print()
-    
-    success = asyncio.run(update_prompt())
-    
-    if not success:
-        sys.exit(1)
+    asyncio.run(update_prompt())

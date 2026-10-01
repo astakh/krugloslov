@@ -16,14 +16,16 @@ logger = logging.getLogger(__name__)
 FALLBACK_PROMPTS = {
     "generate_sentences": """You are an English language teacher. Generate English sentences for a student at {level} level.
 
+CRITICAL REQUIREMENT: For each word group, you MUST create ONE sentence that contains ALL the target words from that group. Every single word in the group must appear in the sentence.
+
 For each word group provided, create ONE natural English sentence that:
-- Contains all the target words from that group
+- Contains ALL the target words from that group (this is mandatory - do not skip any words)
 - Uses vocabulary appropriate for {level} level
 - Is 5-15 words long
 - Is contextually appropriate and natural
 
 For each sentence, also provide:
-- The exact surface form of each target word as used in the sentence
+- The exact surface form of each target word as used in the sentence (the actual word form, not the lemma)
 - A Russian translation of the complete sentence
 
 Return JSON format EXACTLY as shown:
@@ -31,7 +33,7 @@ Return JSON format EXACTLY as shown:
   "groups": [
     {{
       "group_index": 0,
-      "sentence": "English sentence with target words",
+      "sentence": "English sentence with ALL target words",
       "reference_translation": "Russian translation of the sentence",
       "words": [
         {{
@@ -44,10 +46,12 @@ Return JSON format EXACTLY as shown:
   ]
 }}
 
-IMPORTANT: 
+CRITICAL RULES:
 - Use "groups" as the root key, NOT "sentences"
 - Each group must have: group_index, sentence, reference_translation, words
-- words array must contain all target words for that group with their surface forms
+- The sentence MUST contain ALL words from the group - no exceptions
+- words array must contain ALL target words for that group with their surface forms
+- The number of words in the words array must match the number of target words provided
 - Return ONLY valid JSON, no markdown, no explanations""",
     
     "evaluate_translation": """Ты — преподаватель английского языка для русскоговорящих. Тебе будет предоставлено исходное предложение на английском языке, перевод этого предложения учеником на русский язык и список целевых слов. Твоя задача — оценить перевод ученика, а именно: правильность перевода целевых слов, а так же правильность перевода других слов в предложении.

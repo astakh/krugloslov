@@ -382,16 +382,18 @@ class LessonStartService:
         
         user_prompt = f"""Generate {len(groups)} English sentences, one for each word group.
 
+CRITICAL: Each sentence MUST contain ALL the words from its group. Do not skip any words.
+
 Groups:
 """
         for group_data in llm_groups:
             words_str = ", ".join([f"{w['lemma']} ({w['pos']})" for w in group_data["words"]])
-            user_prompt += f"Group {group_data['group_index']}: {words_str}\n"
+            user_prompt += f"Group {group_data['group_index']}: {words_str} (ALL these words must appear in the sentence)\n"
         
         if avoid_sentences:
             user_prompt += f"\nAvoid these sentences:\n" + "\n".join(avoid_sentences[:4])
         
-        user_prompt += "\n\nReturn JSON with 'groups' array."
+        user_prompt += "\n\nReturn JSON with 'groups' array. Remember: every word in each group must be used in the corresponding sentence."
         
         messages = [
             {"role": "system", "content": system_prompt},
