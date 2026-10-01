@@ -14,6 +14,7 @@ from app.schemas.lesson import DeclineWordRequest, DeclineWordResponse
 from app.schemas.lesson_evaluate import (
     EvaluateRequest,
     EvaluateResponse,
+    ExerciseInfoResponse,
     ExerciseResultResponse,
     ReportRequest,
     ReportResponse,
@@ -121,6 +122,22 @@ async def evaluate_exercise(
         user_translation=request.user_translation,
         dont_know=request.dont_know or False
     )
+
+
+@router.get("/{lesson_id}/exercises/{exercise_id}", response_model=ExerciseInfoResponse)
+async def get_exercise_info(
+    lesson_id: int,
+    exercise_id: int,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Get exercise information.
+    
+    Returns exercise details including sentence and status.
+    """
+    service = LessonExerciseService(session, current_user.id)
+    return await service.get_exercise_info(lesson_id, exercise_id)
 
 
 @router.get("/{lesson_id}/exercises/{exercise_id}/result", response_model=ExerciseResultResponse)

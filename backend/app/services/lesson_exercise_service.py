@@ -419,3 +419,62 @@ class LessonExerciseService:
         
         # Return cached result
         return await self._get_cached_result(exercise)
+    
+    async def get_exercise_info(
+        self,
+        lesson_id: int,
+        exercise_id: int
+    ) -> dict:
+        """
+        Get exercise information.
+        
+        Args:
+            lesson_id: Lesson ID
+            exercise_id: Exercise ID
+        
+        Returns:
+            Dictionary with exercise info
+        """
+        from sqlalchemy import func
+        from app.schemas.lesson_evaluate import ExerciseInfoResponse
+        
+        # Get exercise
+        result = await self.session.execute(
+            select(LessonExercise).where(
+                LessonExercise.id == exercise_id,
+                LessonExercise.lesson_id == lesson_id
+            )
+        )
+        exercise = result.scalar_one_or_none()
+        
+        if not exercise:
+            raise AppException(
+                status_code=404,
+                code="exercise_not_found",
+                message="Упражнение не найдено"
+            )
+        
+        # Check lesson belongs to user
+        if exercise.lesson.learning_profile.user_id != self.user_id:
+            raise AppException(
+                status_code=403,
+                code="forbidden",
+                message="Упражнение не принадлежит пользователю"
+            )
+        
+        # Count total exercises
+        result = await self.session.execute(
+            select(func.count(LessonExercise.id)).where(
+                LessonExercise.lesson_id == lesson_id
+            )
+        )
+        total_exercises = result.scalar()
+        
+        return ExerciseInfoResponse(
+            exercise_id=exercise.id,
+            lesson_id=lesson_id,
+            order_index=exercise.order_index,
+            total_exercises=total_exercises,
+            target_sentence=exercise.target_sentence,
+            status=exercise.status
+        )

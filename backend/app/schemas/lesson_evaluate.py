@@ -61,6 +61,16 @@ class ExerciseResultResponse(BaseModel):
     lesson_completed: bool
 
 
+class ExerciseInfoResponse(BaseModel):
+    """Response for getting exercise info."""
+    exercise_id: int
+    lesson_id: int
+    order_index: int
+    total_exercises: int
+    target_sentence: str
+    status: str  # pending or evaluated
+
+
 # === Handle Suggestion ===
 
 class SuggestionActionRequest(BaseModel):
