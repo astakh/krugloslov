@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from app.config import settings
 from app.models.dictionary import Dictionary
@@ -44,13 +44,14 @@ async def seed_general_dictionary():
     
     print(f"✅ Loaded {len(words_data)} words for dictionary '{dictionary_data['code']}'")
     
-    # Create async engine
+    # Create async engine and session factory
     engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     try:
-        async with engine.begin() as conn:
+        async with async_session() as session:
             # Check if general dictionary already exists
-            result = await conn.execute(
+            result = await session.execute(
                 select(Dictionary).where(Dictionary.is_general == True)
             )
             existing_dict = result.scalar_one_or_none()
@@ -69,8 +70,8 @@ async def seed_general_dictionary():
                 description=dictionary_data.get("description", ""),
                 is_general=True,
             )
-            conn.add(dictionary)
-            await conn.flush()
+            session.add(dictionary)
+            await session.flush()
             
             print(f"✅ Dictionary created (id={dictionary.id})")
             
@@ -89,7 +90,7 @@ async def seed_general_dictionary():
                 translations = word_data.get("translations", [])
                 
                 # Check if word already exists
-                result = await conn.execute(
+                result = await session.execute(
                     select(Word).where(
                         Word.lemma_key == lemma_key,
                         Word.pos == pos
@@ -110,15 +111,15 @@ async def seed_general_dictionary():
                         level=level,
                         translations=translations,
                     )
-                    conn.add(word)
-                    await conn.flush()
+                    session.add(word)
+                    await session.flush()
                     added_count += 1
                     
                     if idx % 10 == 0:
                         print(f"   ✅ Added word '{lemma}' (id={word.id})")
                 
                 # Check if link already exists
-                result = await conn.execute(
+                result = await session.execute(
                     select(DictionaryWord).where(
                         DictionaryWord.dictionary_id == dictionary.id,
                         DictionaryWord.word_id == word.id
@@ -134,10 +135,10 @@ async def seed_general_dictionary():
                         dictionary_id=dictionary.id,
                         word_id=word.id,
                     )
-                    conn.add(dict_word)
+                    session.add(dict_word)
                     linked_count += 1
             
-            await conn.commit()
+            await session.commit()
             
             print("\n" + "="*60)
             print("✅ General dictionary seeded successfully!")
