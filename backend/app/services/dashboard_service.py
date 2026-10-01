@@ -91,6 +91,7 @@ class DashboardService:
         """Get profile information."""
         from app.models.learning_profile import LearningProfile
         from app.models.dictionary import Dictionary
+        from app.exceptions import AppException
         
         result = await self.session.execute(
             select(LearningProfile, Dictionary)
@@ -100,7 +101,11 @@ class DashboardService:
         row = result.one_or_none()
         
         if not row:
-            raise ValueError("Learning profile not found")
+            raise AppException(
+                status_code=409,
+                code="onboarding_required",
+                message="Learning profile not found. Please complete onboarding first."
+            )
         
         profile, dictionary = row
         

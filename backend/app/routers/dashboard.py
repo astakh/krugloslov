@@ -23,6 +23,18 @@ async def get_summary(
     Get dashboard summary.
     
     Returns profile info, lessons today, words summary, streak, and CTA.
+    
+    Raises:
+        409: If user has not completed onboarding
     """
+    from app.exceptions import AppException
+    
+    if not current_user.is_onboarded:
+        raise AppException(
+            status_code=409,
+            code="onboarding_required",
+            message="Please complete onboarding first"
+        )
+    
     service = DashboardService(session, current_user)
     return await service.get_summary()
