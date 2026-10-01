@@ -168,10 +168,17 @@ class LessonExerciseService:
         )
     
     async def _get_exercise_with_lesson(self, exercise_id: int) -> LessonExercise:
-        """Get exercise with lesson and profile."""
+        """Get exercise with lesson and profile using eager loading."""
+        from sqlalchemy.orm import selectinload
+        from app.models.lesson import Lesson
+        
         result = await self.session.execute(
             select(LessonExercise)
             .where(LessonExercise.id == exercise_id)
+            .options(
+                selectinload(LessonExercise.lesson)
+                .selectinload(Lesson.learning_profile)
+            )
         )
         exercise = result.scalar_one_or_none()
         
@@ -201,14 +208,17 @@ class LessonExerciseService:
         return first_pending and first_pending.id == exercise_id
     
     async def _get_cached_result(self, exercise: LessonExercise) -> EvaluateResponse:
-        """Get cached evaluation result."""
-        # Get exercise words
+        """Get cached evaluation result with eager loading."""
+        from sqlalchemy.orm import selectinload
+        
+        # Get exercise words with eager loading
         result = await self.session.execute(
             select(LessonExerciseWord)
             .where(
                 LessonExerciseWord.exercise_id == exercise.id,
                 LessonExerciseWord.is_target == True
             )
+            .options(selectinload(LessonExerciseWord.word))
         )
         exercise_words = list(result.scalars().all())
         
@@ -225,10 +235,11 @@ class LessonExerciseService:
                 translations=ew.word.translations
             ))
         
-        # Get suggestions
+        # Get suggestions with eager loading
         result = await self.session.execute(
             select(LessonExerciseSuggestion)
             .where(LessonExerciseSuggestion.exercise_id == exercise.id)
+            .options(selectinload(LessonExerciseSuggestion.word))
         )
         suggestions_db = list(result.scalars().all())
         
@@ -376,7 +387,7 @@ class LessonExerciseService:
         exercise_id: int
     ) -> EvaluateResponse:
         """
-        Get cached result for an evaluated exercise.
+        Get cached result for an evaluated exercise with eager loading.
         
         Args:
             lesson_id: Lesson ID
@@ -385,11 +396,18 @@ class LessonExerciseService:
         Returns:
             EvaluateResponse with cached results
         """
-        # Get exercise
+        from sqlalchemy.orm import selectinload
+        
+        # Get exercise with eager loading
         result = await self.session.execute(
-            select(LessonExercise).where(
+            select(LessonExercise)
+            .where(
                 LessonExercise.id == exercise_id,
                 LessonExercise.lesson_id == lesson_id
+            )
+            .options(
+                selectinload(LessonExercise.lesson)
+                .selectinload(Lesson.learning_profile)
             )
         )
         exercise = result.scalar_one_or_none()
@@ -426,7 +444,7 @@ class LessonExerciseService:
         exercise_id: int
     ) -> dict:
         """
-        Get exercise information.
+        Get exercise information with eager loading.
         
         Args:
             lesson_id: Lesson ID
@@ -436,13 +454,19 @@ class LessonExerciseService:
             Dictionary with exercise info
         """
         from sqlalchemy import func
+        from sqlalchemy.orm import selectinload
         from app.schemas.lesson_evaluate import ExerciseInfoResponse
         
-        # Get exercise
+        # Get exercise with eager loading
         result = await self.session.execute(
-            select(LessonExercise).where(
+            select(LessonExercise)
+            .where(
                 LessonExercise.id == exercise_id,
                 LessonExercise.lesson_id == lesson_id
+            )
+            .options(
+                selectinload(LessonExercise.lesson)
+                .selectinload(Lesson.learning_profile)
             )
         )
         exercise = result.scalar_one_or_none()

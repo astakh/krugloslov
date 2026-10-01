@@ -85,10 +85,13 @@ class LessonResumeService:
         Does not return daily limit.
         Does not revert SRS changes for processed words.
         """
-        # Get lesson with FOR UPDATE
+        from sqlalchemy.orm import selectinload
+        
+        # Get lesson with FOR UPDATE and eager loading
         result = await self.session.execute(
             select(Lesson)
             .where(Lesson.id == lesson_id)
+            .options(selectinload(Lesson.learning_profile))
             .with_for_update()
         )
         lesson = result.scalar_one_or_none()
@@ -137,9 +140,13 @@ class LessonResumeService:
         return "Урок отменён"
 
     async def _get_lesson(self, lesson_id: int) -> Lesson:
-        """Get lesson by ID."""
+        """Get lesson by ID with eager loading."""
+        from sqlalchemy.orm import selectinload
+        
         result = await self.session.execute(
-            select(Lesson).where(Lesson.id == lesson_id)
+            select(Lesson)
+            .where(Lesson.id == lesson_id)
+            .options(selectinload(Lesson.learning_profile))
         )
         lesson = result.scalar_one_or_none()
         

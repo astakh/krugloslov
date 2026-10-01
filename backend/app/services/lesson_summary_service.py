@@ -80,9 +80,13 @@ class LessonSummaryService:
         )
 
     async def _get_lesson(self, lesson_id: int) -> Lesson:
-        """Get lesson by ID."""
+        """Get lesson by ID with eager loading."""
+        from sqlalchemy.orm import selectinload
+        
         result = await self.session.execute(
-            select(Lesson).where(Lesson.id == lesson_id)
+            select(Lesson)
+            .where(Lesson.id == lesson_id)
+            .options(selectinload(Lesson.learning_profile))
         )
         lesson = result.scalar_one_or_none()
         

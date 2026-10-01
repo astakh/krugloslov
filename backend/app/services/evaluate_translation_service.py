@@ -123,13 +123,16 @@ class EvaluateTranslationService:
         return exercise
     
     async def _get_target_words(self, exercise_id: int) -> List[LessonExerciseWord]:
-        """Get target words for exercise."""
+        """Get target words for exercise with eager loading."""
+        from sqlalchemy.orm import selectinload
+        
         result = await self.session.execute(
             select(LessonExerciseWord)
             .where(
                 LessonExerciseWord.exercise_id == exercise_id,
                 LessonExerciseWord.is_target == True
             )
+            .options(selectinload(LessonExerciseWord.word))
         )
         return list(result.scalars().all())
     

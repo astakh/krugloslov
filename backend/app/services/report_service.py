@@ -104,9 +104,17 @@ class ReportService:
         )
     
     async def _get_exercise(self, exercise_id: int) -> LessonExercise:
-        """Get exercise by ID."""
+        """Get exercise by ID with eager loading."""
+        from sqlalchemy.orm import selectinload
+        from app.models.lesson import Lesson
+        
         result = await self.session.execute(
-            select(LessonExercise).where(LessonExercise.id == exercise_id)
+            select(LessonExercise)
+            .where(LessonExercise.id == exercise_id)
+            .options(
+                selectinload(LessonExercise.lesson)
+                .selectinload(Lesson.learning_profile)
+            )
         )
         exercise = result.scalar_one_or_none()
         
