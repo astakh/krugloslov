@@ -48,13 +48,6 @@ const AppContent: React.FC = () => {
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
           <Route path="/dictionary" element={<ProtectedRoute><DictionaryPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/lesson/preview" element={<ProtectedRoute><LessonPreviewPage /></ProtectedRoute>} />
-          <Route path="/lesson/:lessonId/exercise/:exerciseId" element={<ProtectedRoute><ExercisePage /></ProtectedRoute>} />
-          <Route path="/lesson/:lessonId/review/:exerciseId" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
-          <Route path="/lesson/:lessonId/resume" element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
-          <Route path="/lesson/:lessonId/complete" element={<ProtectedRoute><LessonCompletePage /></ProtectedRoute>} />
-          <Route path="/lesson/:lessonId/summary" element={<ProtectedRoute><LessonCompletePage /></ProtectedRoute>} />
-          <Route path="/lesson/*" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
           <Route path="/vocabulary/word/:wordId" element={<ProtectedRoute><WordDetailPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/learning-profile" element={<ProtectedRoute><LearningProfilePage /></ProtectedRoute>} />
@@ -63,6 +56,17 @@ const AppContent: React.FC = () => {
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsersPage /></ProtectedRoute>} />
           <Route path="/admin/db" element={<ProtectedRoute><AdminDbPage /></ProtectedRoute>} />
           <Route path="/admin/prompts" element={<ProtectedRoute><AdminPromptsPage /></ProtectedRoute>} />
+          
+          {/* Lesson routes - specific routes first */}
+          <Route path="/lesson/preview" element={<ProtectedRoute><LessonPreviewPage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/exercise/:exerciseId" element={<ProtectedRoute><ExercisePage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/review/:exerciseId" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/resume" element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/complete" element={<ProtectedRoute><LessonCompletePage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/summary" element={<ProtectedRoute><LessonCompletePage /></ProtectedRoute>} />
+          
+          {/* Catch-all for lesson - must be last */}
+          <Route path="/lesson/*" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <BottomNav />
