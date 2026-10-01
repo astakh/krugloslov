@@ -13,6 +13,10 @@ interface WordInfo {
 interface PreviewData {
   state: "ready" | "resume" | "limit_reached" | "no_words";
   lesson_number?: number;
+  lesson_id?: number;
+  exercises_done?: number;
+  exercises_total?: number;
+  resets_at?: string;
   due_words?: WordInfo[];
   new_words?: WordInfo[];
   dictionary_exhausted?: boolean;
@@ -93,8 +97,8 @@ const LessonPreviewPage: React.FC = () => {
 
       const data = await response.json();
       
-      // Navigate to lesson
-      navigate(`/lesson/${data.lesson_id}`);
+      // Navigate to first exercise
+      navigate(`/lesson/${data.lesson_id}/exercise/${data.current_exercise.exercise_id}`);
     } catch (err) {
       const apiError = err as ApiError;
       
@@ -135,13 +139,15 @@ const LessonPreviewPage: React.FC = () => {
     return (
       <div className="max-w-2xl mx-auto p-4">
         <div className="bg-white rounded-lg shadow p-6 text-center">
-          {preview?.state === "resume" && (
+          {preview?.state === "resume" && preview.lesson_id && (
             <>
               <div className="text-5xl mb-4">▶️</div>
               <h2 className="text-xl font-bold mb-2">Есть незавершённый урок</h2>
-              <p className="text-gray-600 mb-4">Продолжите предыдущий урок</p>
+              <p className="text-gray-600 mb-4">
+                Выполнено {preview.exercises_done} из {preview.exercises_total} упражнений
+              </p>
               <button
-                onClick={() => navigate("/lesson/resume")}
+                onClick={() => navigate(`/lesson/${preview.lesson_id}/resume`)}
                 className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 Продолжить
