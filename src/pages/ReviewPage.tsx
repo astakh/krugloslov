@@ -60,8 +60,28 @@ export default function ReviewPage() {
   };
   
   const handleReport = () => {
-    const reason = prompt('Причина жалобы (bad_sentence, wrong_translation, grammar_error, other):');
-    if (!reason) return;
+    const reasons = [
+      'bad_sentence - Проблема с предложением',
+      'wrong_translation - Неправильный перевод',
+      'grammar_error - Грамматическая ошибка',
+      'other - Другое'
+    ];
+    
+    const reasonInput = prompt(
+      'Выберите причину жалобы:\n\n' + 
+      reasons.join('\n') + 
+      '\n\nВведите одно из: bad_sentence, wrong_translation, grammar_error, other'
+    );
+    
+    if (!reasonInput) return;
+    
+    const reason = reasonInput.trim().toLowerCase();
+    const validReasons = ['bad_sentence', 'wrong_translation', 'grammar_error', 'other'];
+    
+    if (!validReasons.includes(reason)) {
+      alert('Недопустимая причина. Используйте одно из: bad_sentence, wrong_translation, grammar_error, other');
+      return;
+    }
     
     const comment = prompt('Комментарий (необязательно):') || '';
     
