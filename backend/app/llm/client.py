@@ -333,19 +333,33 @@ class GigaChatClient:
                     context_end = min(len(json_str), error_pos + 100)
                     logger.error(f"Context around error (200 chars): ...{json_str[context_start:context_end]}...")
                     
-                    # Try one more time with more aggressive fixes
+                    # Try safe fixes first
+                    logger.info("Attempting safe JSON fixes...")
                     try:
                         fixed_json = self._fix_common_json_issues(json_str)
-                        logger.info(f"Fixed JSON (length: {len(fixed_json)}): {fixed_json}")
+                        logger.info(f"Safe fixed JSON (length: {len(fixed_json)}): {fixed_json}")
                         data = json.loads(fixed_json)
-                        logger.info(f"Successfully parsed fixed JSON: {list(data.keys())}")
+                        logger.info(f"Successfully parsed safe fixed JSON: {list(data.keys())}")
+                        json_str = fixed_json
                     except json.JSONDecodeError as e2:
-                        logger.error(f"Fixed JSON also failed to parse: {e2}")
-                        logger.error(f"Fixed JSON error position: line {e2.lineno}, column {e2.colno}, char {e2.pos}")
-                        if attempt < max_retries:
-                            logger.info(f"Retrying LLM request (attempt {attempt + 2}/{max_retries + 1})")
-                            continue
-                        raise LlmInvalidResponse(f"JSON parse error: {e}")
+                        logger.error(f"Safe fixes failed: {e2}")
+                        logger.error(f"Safe fixed JSON error position: line {e2.lineno}, column {e2.colno}, char {e2.pos}")
+                        
+                        # Try aggressive fixes
+                        logger.info("Attempting aggressive JSON fixes...")
+                        try:
+                            aggressive_json = self._aggressive_json_fix(fixed_json)
+                            logger.info(f"Aggressive fixed JSON (length: {len(aggressive_json)}): {aggressive_json}")
+                            data = json.loads(aggressive_json)
+                            logger.info(f"Successfully parsed aggressive fixed JSON: {list(data.keys())}")
+                            json_str = aggressive_json
+                        except json.JSONDecodeError as e3:
+                            logger.error(f"Aggressive fixes also failed: {e3}")
+                            logger.error(f"Aggressive fixed JSON error position: line {e3.lineno}, column {e3.colno}, char {e3.pos}")
+                            if attempt < max_retries:
+                                logger.info(f"Retrying LLM request (attempt {attempt + 2}/{max_retries + 1})")
+                                continue
+                            raise LlmInvalidResponse(f"JSON parse error after all fix attempts: {e}")
                 
                 # Validate with Pydantic
                 try:
@@ -490,60 +504,110 @@ class GigaChatClient:
         return json_str
     
     def _fix_common_json_issues(self, json_str: str) -> str:
-        """Attempt to fix common JSON formatting issues."""
+        """Attempt to fix common JSON formatting issues with safe patterns."""
         import re
         
         logger.info(f"Attempting to fix JSON issues in string (length: {len(json_str)})")
-        logger.debug(f"Original JSON: {json_str}")
+        logger.info(f"Original JSON: {json_str}")
         
-        # Fix 1: Missing quotes around keys (e.g., {key: "value"} -> {"key": "value"})
+        # Store original for comparison
+        original = json_str
+        
+        # Fix 1: Trailing commas before closing brackets (SAFE)
+        # {"a": 1,} -> {"a": 1}
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+        if json_str != original:
+            logger.info(f"Fixed trailing commas")
+        
+        # Fix 2: Missing quotes around keys (SAFE)
+        # {key: "value"} -> {"key": "value"}
+        # Only match unquoted identifiers followed by colon
         json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r' "\1":', json_str)
-        logger.debug(f"After fixing unquoted keys: {json_str[:300]}")
+        if json_str != original:
+            logger.info(f"Fixed unquoted keys")
         
-        # Fix 2: Single quotes to double quotes (but be careful not to break apostrophes in strings)
-        # Only replace single quotes that are used as string delimiters
+        # Fix 3: Single quotes to double quotes for string delimiters (SAFE)
+        # Only replace single quotes that are clearly string delimiters
+        # Pattern: 'string' -> "string" (only when surrounded by structural characters)
         json_str = re.sub(r"(?<=[\[{,])\s*'([^']*)'\s*(?=[\]},:])", r'"\1"', json_str)
-        logger.debug(f"After fixing single quotes: {json_str[:300]}")
+        if json_str != original:
+            logger.info(f"Fixed single quotes")
         
-        # Fix 3: Trailing commas (e.g., {"a": 1,} -> {"a": 1})
-        json_str = re.sub(r',\s*}', '}', json_str)
-        json_str = re.sub(r',\s*]', ']', json_str)
-        logger.debug(f"After fixing trailing commas: {json_str[:300]}")
+        # Fix 4: Missing colon between key and value (CAREFUL - only at structural level)
+        # Pattern: "key" "value" at the start of a key-value pair
+        # We need to be very careful not to break strings with spaces
+        # Only fix if we see: "word" "word" pattern right after { or ,
+        json_str = re.sub(r'(?<=[{,])\s*"([^"]+)"\s+"([^"]+)"', r'"\1": "\2"', json_str)
+        if json_str != original:
+            logger.info(f"Fixed missing colons between quoted strings")
         
-        # Fix 4: Missing colon between key and value (e.g., {"key" "value"} -> {"key": "value"})
-        # This is the most common issue - "Expecting ':' delimiter"
-        # Pattern: "key" "value" -> "key": "value"
-        json_str = re.sub(r'"\s+"', '": "', json_str)
-        logger.debug(f"After fixing missing colons (pattern 1): {json_str[:300]}")
+        # Fix 5: Missing colon with unquoted key (SAFE)
+        # {key "value"} -> {"key": "value"}
+        json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+"([^"]+)"', r' "\1": "\2"', json_str)
+        if json_str != original:
+            logger.info(f"Fixed missing colons with unquoted keys")
         
-        # Fix 5: Missing colon with unquoted key (e.g., {key "value"} -> {"key": "value"})
-        json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+"', r' "\1": "', json_str)
-        logger.debug(f"After fixing missing colons (pattern 2): {json_str[:300]}")
-        
-        # Fix 6: Missing colon with value first (e.g., {"key" value} -> {"key": value})
-        # This handles cases where value is not quoted
-        json_str = re.sub(r'"\s+([a-zA-Z0-9_])', r'": \1', json_str)
-        logger.debug(f"After fixing missing colons (pattern 3): {json_str[:300]}")
-        
-        # Fix 7: Multiple consecutive spaces that might indicate missing colons
-        # e.g., "key"   "value" -> "key": "value"
-        json_str = re.sub(r'"\s{2,}"', '": "', json_str)
-        logger.debug(f"After fixing multiple spaces: {json_str[:300]}")
-        
-        # Fix 8: Ensure all keys are quoted
-        # Pattern: {key: -> {"key":
-        json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r' "\1":', json_str)
-        logger.debug(f"After ensuring all keys are quoted: {json_str[:300]}")
-        
-        # Fix 9: Remove any newlines or tabs that might break JSON
+        # Fix 6: Clean up whitespace (SAFE)
+        # Remove newlines, tabs, and collapse multiple spaces
         json_str = json_str.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
-        # Collapse multiple spaces
         json_str = re.sub(r'\s+', ' ', json_str)
-        logger.debug(f"After removing newlines/tabs: {json_str[:300]}")
+        if json_str != original:
+            logger.info(f"Cleaned up whitespace")
         
         logger.info(f"JSON fixing completed, final length: {len(json_str)}")
-        logger.debug(f"Final fixed JSON: {json_str}")
+        logger.info(f"Fixed JSON: {json_str}")
         
+        return json_str
+    
+    def _aggressive_json_fix(self, json_str: str) -> str:
+        """Attempt aggressive JSON fixes for severely malformed JSON."""
+        import re
+        
+        logger.info(f"Attempting AGGRESSIVE JSON fixes (length: {len(json_str)})")
+        
+        # Strategy 1: Try to extract key-value pairs manually
+        # Look for patterns like "key": "value" or "key": value
+        evaluations = []
+        
+        # Try to find all lemma/pos/result patterns
+        lemma_pattern = r'"lemma"\s*:\s*"([^"]+)"'
+        pos_pattern = r'"pos"\s*:\s*"([^"]+)"'
+        result_pattern = r'"result"\s*:\s*"([^"]+)"'
+        fragment_pattern = r'"user_fragment"\s*:\s*(?:"([^"]+)"|null)'
+        
+        lemmas = re.findall(lemma_pattern, json_str)
+        poses = re.findall(pos_pattern, json_str)
+        results = re.findall(result_pattern, json_str)
+        fragments = re.findall(fragment_pattern, json_str)
+        
+        logger.info(f"Found {len(lemmas)} lemmas, {len(poses)} pos, {len(results)} results, {len(fragments)} fragments")
+        
+        # Build evaluations array
+        for i in range(min(len(lemmas), len(poses), len(results))):
+            eval_obj = {
+                "lemma": lemmas[i],
+                "pos": poses[i],
+                "result": results[i]
+            }
+            if i < len(fragments):
+                eval_obj["user_fragment"] = fragments[i] if fragments[i] else None
+            evaluations.append(eval_obj)
+        
+        if evaluations:
+            # Build valid JSON
+            fixed_json = json.dumps({"evaluations": evaluations}, ensure_ascii=False)
+            logger.info(f"Reconstructed JSON from patterns: {fixed_json}")
+            return fixed_json
+        
+        # Strategy 2: If pattern extraction failed, try to fix common structural issues
+        # Add missing colons more aggressively
+        json_str = re.sub(r'"\s+"([^"]+)":', r'": "\1":', json_str)
+        
+        # Add missing quotes around values
+        json_str = re.sub(r':\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,}\]])', r': "\1"\2', json_str)
+        
+        # Try to parse again
+        logger.info(f"Aggressive structural fixes applied: {json_str}")
         return json_str
 
 
