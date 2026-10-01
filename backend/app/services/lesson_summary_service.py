@@ -151,6 +151,8 @@ class LessonSummaryService:
 
     async def _calculate_streak(self, lesson: Lesson) -> StreakSummary:
         """Calculate streak including this lesson."""
+        from app.models.learning_profile import LearningProfile
+        
         # Get user's timezone
         user_tz = ZoneInfo(self.user.timezone)
         now_utc = datetime.now(timezone.utc)
@@ -159,9 +161,9 @@ class LessonSummaryService:
         # Get all completed lesson dates for this user
         result = await self.session.execute(
             select(Lesson.completed_local_date)
-            .join(lesson.learning_profile)
+            .join(LearningProfile, Lesson.learning_profile_id == LearningProfile.id)
             .where(
-                Lesson.learning_profile.has(user_id=self.user.id),
+                LearningProfile.user_id == self.user.id,
                 Lesson.status == "completed",
                 Lesson.completed_local_date.isnot(None)
             )
@@ -182,9 +184,9 @@ class LessonSummaryService:
             # Check if there were other lessons completed today before this one
             result = await self.session.execute(
                 select(func.count(Lesson.id))
-                .join(lesson.learning_profile)
+                .join(LearningProfile, Lesson.learning_profile_id == LearningProfile.id)
                 .where(
-                    Lesson.learning_profile.has(user_id=self.user.id),
+                    LearningProfile.user_id == self.user.id,
                     Lesson.status == "completed",
                     Lesson.completed_local_date == today,
                     Lesson.id != lesson.id

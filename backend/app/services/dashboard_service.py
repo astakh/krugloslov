@@ -119,11 +119,13 @@ class DashboardService:
 
     async def _count_lessons_today(self, today: date) -> int:
         """Count lessons started today."""
+        from app.models.learning_profile import LearningProfile
+        
         result = await self.session.execute(
             select(func.count(Lesson.id))
-            .join(Lesson.learning_profile)
+            .join(LearningProfile, Lesson.learning_profile_id == LearningProfile.id)
             .where(
-                Lesson.learning_profile.has(user_id=self.user.id),
+                LearningProfile.user_id == self.user.id,
                 Lesson.started_local_date == today,
             )
         )
@@ -149,11 +151,13 @@ class DashboardService:
         from app.models.lesson_exercise import LessonExercise
         
         # Find in-progress lesson
+        from app.models.learning_profile import LearningProfile
+        
         result = await self.session.execute(
             select(Lesson)
-            .join(Lesson.learning_profile)
+            .join(LearningProfile, Lesson.learning_profile_id == LearningProfile.id)
             .where(
-                Lesson.learning_profile.has(user_id=self.user.id),
+                LearningProfile.user_id == self.user.id,
                 Lesson.status == "in_progress",
             )
         )
