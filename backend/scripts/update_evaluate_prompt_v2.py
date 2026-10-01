@@ -63,7 +63,7 @@ async def update_prompt():
             result = await conn.execute(
                 select(Prompt).where(Prompt.key == "evaluate_translation")
             )
-            existing_prompt = result.scalar_one_or_none()
+            existing_prompt = result.scalars().one_or_none()
             
             if existing_prompt:
                 print(f"✅ Found existing prompt 'evaluate_translation'")
