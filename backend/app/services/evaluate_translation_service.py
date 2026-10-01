@@ -218,17 +218,33 @@ Evaluate each target word and suggest up to 3 new words if appropriate."""
             {"role": "user", "content": user_message}
         ]
         
+        # Prepare expected words for adapter
+        expected_words = [
+            {"lemma": tw.word.lemma, "pos": tw.word.pos}
+            for tw in target_words
+        ]
+        
         # Call LLM
         start_time = __import__("time").time()
         try:
-            response = await gigachat_client.chat_json(
+            # Get raw JSON response
+            raw_response = await gigachat_client.chat_json_raw(
                 messages=messages,
-                validator=LlmEvaluateResponse,
                 temperature=settings.EVAL_TEMPERATURE,
                 max_tokens=1000,
                 timeout=10.0,
                 max_retries=1
             )
+            
+            # Adapt response to expected format
+            from app.services.llm_evaluation_adapter import adapt_evaluation_response
+            
+            try:
+                response = adapt_evaluation_response(raw_response, expected_words)
+                logger.info(f"Evaluation response adapted successfully")
+            except ValueError as e:
+                logger.warning(f"Failed to adapt evaluation response: {e}")
+                raise LlmInvalidResponse(f"Failed to adapt evaluation response: {e}")
             
             # Log successful call
             latency_ms = int(( __import__("time").time() - start_time) * 1000)
@@ -237,8 +253,8 @@ Evaluate each target word and suggest up to 3 new words if appropriate."""
                 purpose="evaluate",
                 user_id=self.user_id,
                 exercise_id=exercise.id,
-                request={"messages": messages},
-                response=response.model_dump(),
+                request_data={"messages": messages},
+                response_data=response.model_dump(),
                 status="ok",
                 latency_ms=latency_ms
             )
@@ -253,8 +269,8 @@ Evaluate each target word and suggest up to 3 new words if appropriate."""
                 purpose="evaluate",
                 user_id=self.user_id,
                 exercise_id=exercise.id,
-                request={"messages": messages},
-                response=None,
+                request_data={"messages": messages},
+                response_data=None,
                 status="http_error",
                 latency_ms=latency_ms
             )
