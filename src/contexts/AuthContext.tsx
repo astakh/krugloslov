@@ -46,6 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Ref for managing concurrent refresh requests
   const refreshPromiseRef = useRef<Promise<string> | null>(null);
+  
+  // Ref to track if session restoration has been attempted
+  const sessionRestoredRef = useRef(false);
 
   const isAuthenticated = accessToken !== null;
 
@@ -193,24 +196,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Redirect to onboarding if authenticated but not onboarded
   useEffect(() => {
-    if (user && !user.is_onboarded && window.location.pathname !== "/onboarding") {
-      navigate("/onboarding");
+    if (user && !user.is_onboarded) {
+      const currentPath = window.location.pathname;
+      // Only redirect if not already on onboarding or auth pages
+      if (currentPath !== "/onboarding" && currentPath !== "/auth" && currentPath !== "/register") {
+        navigate("/onboarding");
+      }
     }
   }, [user, navigate]);
 
   // Listen for 401 events from API client
   useEffect(() => {
+    let isRefreshing = false;
+    
     const handleUnauthorized = async () => {
       // Only try to refresh if we have an access token
       // (otherwise we're not authenticated yet)
-      if (!accessToken) {
+      if (!accessToken || isRefreshing) {
         return;
       }
+      
+      isRefreshing = true;
       
       try {
         await refreshAccessToken();
       } catch {
         // Refresh failed, already redirected in refreshAccessToken
+      } finally {
+        isRefreshing = false;
       }
     };
 
@@ -222,6 +235,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Restore session on app load using refresh token
   useEffect(() => {
+    // Only attempt session restoration once
+    if (sessionRestoredRef.current) {
+      setIsLoading(false);
+      return;
+    }
+    
+    sessionRestoredRef.current = true;
+
     const restoreSession = async () => {
       try {
         // Try to refresh token on app load
@@ -236,17 +257,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // No valid session, user needs to login
         setAccessToken(null);
         setUser(null);
-        // Redirect to login page if not already there
-        if (window.location.pathname !== "/auth" && window.location.pathname !== "/register") {
-          navigate("/auth");
-        }
+        // Don't redirect here - let the app handle routing based on auth state
       } finally {
         setIsLoading(false);
       }
     };
 
     restoreSession();
-  }, [navigate]);
+  }, [fetchUserInfo]);
 
   const value: AuthContextValue = {
     isAuthenticated,

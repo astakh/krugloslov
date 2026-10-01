@@ -62,7 +62,11 @@ class ApiClient {
       ...options,
     });
 
-    if (response.status === 401) {
+    // Don't dispatch unauthorized event for refresh requests to avoid infinite loop
+    const isRefreshRequest = path.includes("/auth/refresh");
+    
+    // Only dispatch unauthorized event for 401 status, not for 409 or other errors
+    if (response.status === 401 && !isRefreshRequest) {
       // Dispatch event for auth context to handle
       window.dispatchEvent(new CustomEvent("api:unauthorized"));
     }
