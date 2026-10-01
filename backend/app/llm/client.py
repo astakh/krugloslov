@@ -314,8 +314,8 @@ class GigaChatClient:
                         continue
                     raise LlmInvalidResponse("Failed to extract JSON from response")
                 
-                # Log raw JSON string for debugging
-                logger.info(f"Extracted JSON string (first 1000 chars): {json_str[:1000]}")
+                # Log raw JSON string for debugging - ВСЕГДА логируем полный JSON
+                logger.info(f"Extracted JSON string (length: {len(json_str)}): {json_str}")
                 
                 # Parse JSON
                 try:
@@ -329,14 +329,14 @@ class GigaChatClient:
                     
                     # Show context around the error
                     error_pos = e.pos
-                    context_start = max(0, error_pos - 50)
-                    context_end = min(len(json_str), error_pos + 50)
-                    logger.error(f"Context around error: ...{json_str[context_start:context_end]}...")
+                    context_start = max(0, error_pos - 100)
+                    context_end = min(len(json_str), error_pos + 100)
+                    logger.error(f"Context around error (200 chars): ...{json_str[context_start:context_end]}...")
                     
                     # Try one more time with more aggressive fixes
                     try:
                         fixed_json = self._fix_common_json_issues(json_str)
-                        logger.info(f"Attempting to parse fixed JSON (first 1000 chars): {fixed_json[:1000]}")
+                        logger.info(f"Fixed JSON (length: {len(fixed_json)}): {fixed_json}")
                         data = json.loads(fixed_json)
                         logger.info(f"Successfully parsed fixed JSON: {list(data.keys())}")
                     except json.JSONDecodeError as e2:
@@ -494,29 +494,55 @@ class GigaChatClient:
         import re
         
         logger.info(f"Attempting to fix JSON issues in string (length: {len(json_str)})")
+        logger.debug(f"Original JSON: {json_str}")
         
-        # Fix missing quotes around keys (e.g., {key: "value"} -> {"key": "value"})
+        # Fix 1: Missing quotes around keys (e.g., {key: "value"} -> {"key": "value"})
         json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r' "\1":', json_str)
-        logger.debug(f"After fixing unquoted keys: {json_str[:200]}")
+        logger.debug(f"After fixing unquoted keys: {json_str[:300]}")
         
-        # Fix single quotes to double quotes (but be careful not to break apostrophes in strings)
+        # Fix 2: Single quotes to double quotes (but be careful not to break apostrophes in strings)
         # Only replace single quotes that are used as string delimiters
         json_str = re.sub(r"(?<=[\[{,])\s*'([^']*)'\s*(?=[\]},:])", r'"\1"', json_str)
-        logger.debug(f"After fixing single quotes: {json_str[:200]}")
+        logger.debug(f"After fixing single quotes: {json_str[:300]}")
         
-        # Fix trailing commas (e.g., {"a": 1,} -> {"a": 1})
+        # Fix 3: Trailing commas (e.g., {"a": 1,} -> {"a": 1})
         json_str = re.sub(r',\s*}', '}', json_str)
         json_str = re.sub(r',\s*]', ']', json_str)
-        logger.debug(f"After fixing trailing commas: {json_str[:200]}")
+        logger.debug(f"After fixing trailing commas: {json_str[:300]}")
         
-        # Fix missing colon (e.g., {"key" "value"} -> {"key": "value"})
+        # Fix 4: Missing colon between key and value (e.g., {"key" "value"} -> {"key": "value"})
+        # This is the most common issue - "Expecting ':' delimiter"
+        # Pattern: "key" "value" -> "key": "value"
         json_str = re.sub(r'"\s+"', '": "', json_str)
-        logger.debug(f"After fixing missing colons: {json_str[:200]}")
+        logger.debug(f"After fixing missing colons (pattern 1): {json_str[:300]}")
         
-        # Fix unescaped quotes inside strings
-        # This is tricky, so we'll skip it for now
+        # Fix 5: Missing colon with unquoted key (e.g., {key "value"} -> {"key": "value"})
+        json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+"', r' "\1": "', json_str)
+        logger.debug(f"After fixing missing colons (pattern 2): {json_str[:300]}")
+        
+        # Fix 6: Missing colon with value first (e.g., {"key" value} -> {"key": value})
+        # This handles cases where value is not quoted
+        json_str = re.sub(r'"\s+([a-zA-Z0-9_])', r'": \1', json_str)
+        logger.debug(f"After fixing missing colons (pattern 3): {json_str[:300]}")
+        
+        # Fix 7: Multiple consecutive spaces that might indicate missing colons
+        # e.g., "key"   "value" -> "key": "value"
+        json_str = re.sub(r'"\s{2,}"', '": "', json_str)
+        logger.debug(f"After fixing multiple spaces: {json_str[:300]}")
+        
+        # Fix 8: Ensure all keys are quoted
+        # Pattern: {key: -> {"key":
+        json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r' "\1":', json_str)
+        logger.debug(f"After ensuring all keys are quoted: {json_str[:300]}")
+        
+        # Fix 9: Remove any newlines or tabs that might break JSON
+        json_str = json_str.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+        # Collapse multiple spaces
+        json_str = re.sub(r'\s+', ' ', json_str)
+        logger.debug(f"After removing newlines/tabs: {json_str[:300]}")
         
         logger.info(f"JSON fixing completed, final length: {len(json_str)}")
+        logger.debug(f"Final fixed JSON: {json_str}")
         
         return json_str
 
