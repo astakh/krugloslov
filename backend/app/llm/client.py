@@ -51,6 +51,8 @@ class GigaChatClient:
         
         # SSL context
         self._ssl_context = None
+        self._verify_ssl = True
+        
         if settings.GIGACHAT_CA_CERT_PATH:
             import ssl
             import os
@@ -67,6 +69,10 @@ class GigaChatClient:
             else:
                 logger.warning(f"SSL certificate file not found: {settings.GIGACHAT_CA_CERT_PATH}. Using default SSL context.")
                 self._ssl_context = None
+        else:
+            # No certificate path specified - disable SSL verification for development
+            logger.warning("GIGACHAT_CA_CERT_PATH not set. SSL verification disabled for development.")
+            self._verify_ssl = False
     
     async def _get_token(self) -> str:
         """Get valid access token, refreshing if needed."""
@@ -79,7 +85,7 @@ class GigaChatClient:
         """Refresh OAuth token from GigaChat."""
         logger.info(f"Refreshing GigaChat token from {self.OAUTH_URL}")
         
-        async with httpx.AsyncClient(verify=self._ssl_context or True) as client:
+        async with httpx.AsyncClient(verify=self._ssl_context if self._ssl_context else self._verify_ssl) as client:
             try:
                 headers = {
                     "Authorization": f"Basic {settings.GIGACHAT_AUTH_KEY}",
@@ -154,7 +160,7 @@ class GigaChatClient:
         logger.debug(f"Messages count: {len(messages)}")
         
         async with self._semaphore:
-            async with httpx.AsyncClient(verify=self._ssl_context or True) as client:
+            async with httpx.AsyncClient(verify=self._ssl_context if self._ssl_context else self._verify_ssl) as client:
                 try:
                     request_data = {
                         "model": settings.GIGACHAT_MODEL,
