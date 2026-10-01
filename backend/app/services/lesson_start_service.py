@@ -144,6 +144,9 @@ class LessonStartService:
                 latency_ms=latency_ms,
             )
             
+            # Get word info for matching
+            word_info = await self._get_word_info(word_ids)
+            
             # Create lesson in transaction
             lesson = await self._create_lesson_transaction(
                 profile=profile,
@@ -152,6 +155,7 @@ class LessonStartService:
                 generated_groups=generated_groups,
                 preview=preview,
                 word_ids=word_ids,
+                word_info=word_info,
                 idempotency_key=idempotency_key,
             )
             
@@ -521,6 +525,7 @@ Groups:
         generated_groups: List[dict],
         preview: dict,
         word_ids: List[int],
+        word_info: dict,
         idempotency_key: Optional[str],
     ) -> Lesson:
         """Create lesson in a single transaction."""
@@ -634,9 +639,20 @@ Groups:
                 self.session.add(exercise)
                 await self.session.flush()
                 
-                # Create exercise words
+                # Create exercise words - match by lemma and pos
                 for word_data in generated["words"]:
-                    word_id = next(wid for wid in group if self._word_matches(wid, word_data))
+                    # Find matching word_id by comparing lemma and pos
+                    word_id = None
+                    for wid in group:
+                        if wid in word_info:
+                            info = word_info[wid]
+                            if info["lemma"] == word_data["lemma"] and info["pos"] == word_data["pos"]:
+                                word_id = wid
+                                break
+                    
+                    if word_id is None:
+                        logger.warning(f"Could not match word: {word_data['lemma']} ({word_data['pos']})")
+                        continue
                     
                     exercise_word = LessonExerciseWord(
                         exercise_id=exercise.id,
@@ -666,11 +682,6 @@ Groups:
                 )
         
         return lesson
-    
-    def _word_matches(self, word_id: int, word_data: dict) -> bool:
-        """Check if word_id matches word_data (placeholder)."""
-        # In production, you'd compare lemma and pos
-        return True
     
     async def _get_first_exercise(self, lesson_id: int) -> LessonExercise:
         """Get first exercise for lesson with eager loading."""
