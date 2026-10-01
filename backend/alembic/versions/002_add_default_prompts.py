@@ -25,24 +25,41 @@ def upgrade() -> None:
         VALUES 
         (
             'generate_sentences',
-            'You are an English language teacher. Generate {count} English sentences for a student at {level} level.
+            'You are an English language teacher. Generate English sentences for a student at {level} level.
 
-Requirements:
-- Each sentence must contain the target word: {word}
-- Sentences should be natural and contextually appropriate
-- Use vocabulary appropriate for {level} level
-- Each sentence should be 5-15 words long
-- Provide a Russian translation for each sentence
+For each word group provided, create ONE natural English sentence that:
+- Contains all the target words from that group
+- Uses vocabulary appropriate for {level} level
+- Is 5-15 words long
+- Is contextually appropriate and natural
 
-Return JSON format:
+For each sentence, also provide:
+- The exact surface form of each target word as used in the sentence
+- A Russian translation of the complete sentence
+
+Return JSON format EXACTLY as shown:
 {{
-  "sentences": [
+  "groups": [
     {{
-      "english": "English sentence with target word",
-      "russian": "Russian translation"
+      "group_index": 0,
+      "sentence": "English sentence with target words",
+      "reference_translation": "Russian translation of the sentence",
+      "words": [
+        {{
+          "lemma": "target_word_lemma",
+          "pos": "noun|verb|adj|adv",
+          "surface_form": "exact form used in sentence"
+        }}
+      ]
     }}
   ]
-}}',
+}}
+
+IMPORTANT: 
+- Use "groups" as the root key, NOT "sentences"
+- Each group must have: group_index, sentence, reference_translation, words
+- words array must contain all target words for that group with their surface forms
+- Return ONLY valid JSON, no markdown, no explanations',
             NOW()
         ),
         (
