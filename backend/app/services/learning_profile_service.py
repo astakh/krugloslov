@@ -153,15 +153,16 @@ class LearningProfileService:
 
     async def _calculate_accuracy(self, profile_id: int, days: Optional[int]) -> Optional[float]:
         """Calculate accuracy for given period."""
+        from sqlalchemy import case
         from app.models import LessonExerciseWord, Lesson
         
-        # Build query
+        # Build query with case statement for counting correct answers
         query = select(
             func.count(LessonExerciseWord.id).label("total"),
             func.sum(
-                func.cast(
-                    LessonExerciseWord.result.in_(["correct", "typo"]),
-                    func.cast(1, func.Integer()),
+                case(
+                    (LessonExerciseWord.result.in_(["correct", "typo"]), 1),
+                    else_=0
                 )
             ).label("correct"),
         ).where(
@@ -183,7 +184,7 @@ class LearningProfileService:
         if not row or row.total == 0:
             return None
         
-        return round(row.correct / row.total * 100, 2)
+        return round(float(row.correct) / float(row.total) * 100, 2)
 
     async def _count_completed_lessons(self, profile_id: int) -> int:
         """Count completed lessons."""
