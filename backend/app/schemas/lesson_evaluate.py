@@ -42,6 +42,7 @@ class EvaluateResponse(BaseModel):
     target_sentence: str
     reference_translation: str
     user_translation: Optional[str]
+    dont_know: bool
     words: List[WordEvaluation]
     suggestions: List[SuggestedWord]
     lesson_completed: bool

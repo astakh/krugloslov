@@ -69,7 +69,7 @@ class EvaluateTranslationService:
         # Validate user translation
         validated_translation = self._validate_translation(user_translation)
         
-        # Call LLM for evaluation
+        # Call LLM for evaluation (single attempt, no retries)
         try:
             llm_response = await self._call_llm(exercise, target_words, validated_translation)
         except LlmRefused:
@@ -78,17 +78,13 @@ class EvaluateTranslationService:
                 code="llm_refused",
                 message="Модель отказалась проверять перевод"
             )
-        except LlmInvalidResponse:
-            # Try one more time
-            try:
-                llm_response = await self._call_llm(exercise, target_words, validated_translation)
-            except LlmError as e:
-                logger.error(f"LLM evaluation failed after retry: {e}")
-                raise AppException(
-                    status_code=503,
-                    code="llm_unavailable",
-                    message="Сервер перегружен, попробуйте ещё раз"
-                )
+        except LlmInvalidResponse as e:
+            logger.error(f"LLM returned invalid response: {e}")
+            raise AppException(
+                status_code=503,
+                code="llm_invalid_response",
+                message="Модель вернула некорректный ответ, попробуйте ещё раз"
+            )
         except LlmError as e:
             logger.error(f"LLM evaluation failed: {e}")
             raise AppException(
@@ -227,13 +223,13 @@ Evaluate each target word and suggest up to 3 new words if appropriate."""
         # Call LLM
         start_time = __import__("time").time()
         try:
-            # Get raw JSON response
+            # Get raw JSON response (single attempt, no retries)
             raw_response = await gigachat_client.chat_json_raw(
                 messages=messages,
                 temperature=settings.EVAL_TEMPERATURE,
                 max_tokens=1000,
                 timeout=10.0,
-                max_retries=1
+                max_retries=0
             )
             
             # Adapt response to expected format

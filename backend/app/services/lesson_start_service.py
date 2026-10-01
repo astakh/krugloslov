@@ -416,13 +416,13 @@ Groups:
             try:
                 logger.info(f"Calling GigaChat API (attempt {attempt + 1})")
                 
-                # Get raw JSON response without validation
+                # Get raw JSON response without validation (single attempt, no retries)
                 raw_response = await gigachat_client.chat_json_raw(
                     messages=messages,
                     temperature=settings.GEN_TEMPERATURE,
                     max_tokens=2000,
                     timeout=min(timeout - elapsed, 25.0),
-                    max_retries=1,
+                    max_retries=0,
                 )
                 logger.info(f"LLM raw response received")
                 

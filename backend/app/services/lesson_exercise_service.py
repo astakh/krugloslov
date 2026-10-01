@@ -162,6 +162,7 @@ class LessonExerciseService:
             target_sentence=exercise.target_sentence,
             reference_translation=exercise.reference_translation,
             user_translation=exercise.user_translation,
+            dont_know=dont_know,
             words=word_evaluations,
             suggestions=suggested_words,
             lesson_completed=lesson_completed
@@ -260,6 +261,7 @@ class LessonExerciseService:
             target_sentence=exercise.target_sentence,
             reference_translation=exercise.reference_translation,
             user_translation=exercise.user_translation,
+            dont_know=exercise.dont_know,
             words=word_evaluations,
             suggestions=suggestions,
             lesson_completed=lesson_completed
