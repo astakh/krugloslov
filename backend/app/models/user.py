@@ -31,7 +31,6 @@ class User(Base):
     # Relationships
     refresh_tokens = relationship("RefreshToken", back_populates="user", lazy="selectin")
     learning_profile = relationship("LearningProfile", back_populates="user", uselist=False, lazy="selectin")
-    lessons = relationship("Lesson", back_populates="learning_profile", lazy="selectin")
     events = relationship("Event", back_populates="user", lazy="selectin")
 
     __table_args__ = (
