@@ -147,6 +147,26 @@ export default function ExercisePage() {
             <p className="text-lg text-gray-700">{exercise.target_sentence}</p>
           </div>
           
+          {/* Target words */}
+          {exercise.target_words && exercise.target_words.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Целевые слова для перевода:
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {exercise.target_words.map((word) => (
+                  <span
+                    key={word.word_id}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                  >
+                    {word.lemma}
+                    <span className="ml-1.5 text-xs text-blue-600">({word.pos})</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {/* Translation input */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">

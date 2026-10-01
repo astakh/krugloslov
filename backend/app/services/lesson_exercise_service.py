@@ -508,11 +508,32 @@ class LessonExerciseService:
         )
         total_exercises = result.scalar()
         
+        # Get target words with eager loading
+        from app.schemas.lesson_evaluate import TargetWordInfo
+        result = await self.session.execute(
+            select(LessonExerciseWord, Word)
+            .join(Word, LessonExerciseWord.word_id == Word.id)
+            .where(
+                LessonExerciseWord.exercise_id == exercise_id,
+                LessonExerciseWord.is_target == True
+            )
+            .options(selectinload(LessonExerciseWord.word))
+        )
+        target_words = [
+            TargetWordInfo(
+                word_id=exercise_word.word_id,
+                lemma=exercise_word.word.lemma,
+                pos=exercise_word.word.pos
+            )
+            for exercise_word, word in result.all()
+        ]
+        
         return ExerciseInfoResponse(
             exercise_id=exercise.id,
             lesson_id=lesson_id,
             order_index=exercise.order_index,
             total_exercises=total_exercises,
             target_sentence=exercise.target_sentence,
-            status=exercise.status
+            status=exercise.status,
+            target_words=target_words
         )

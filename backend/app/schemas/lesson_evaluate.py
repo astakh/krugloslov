@@ -62,6 +62,13 @@ class ExerciseResultResponse(BaseModel):
     lesson_completed: bool
 
 
+class TargetWordInfo(BaseModel):
+    """Target word information for exercise."""
+    word_id: int
+    lemma: str
+    pos: str
+
+
 class ExerciseInfoResponse(BaseModel):
     """Response for getting exercise info."""
     exercise_id: int
@@ -70,6 +77,7 @@ class ExerciseInfoResponse(BaseModel):
     total_exercises: int
     target_sentence: str
     status: str  # pending or evaluated
+    target_words: List[TargetWordInfo]  # Target words to translate
 
 
 # === Handle Suggestion ===

@@ -1,9 +1,16 @@
+export interface TargetWord {
+  word_id: number;
+  lemma: string;
+  pos: string;
+}
+
 export interface Exercise {
   id: number;
   order_index: number;
   total_exercises: number;
   target_sentence: string;
   status: 'pending' | 'evaluated';
+  target_words: TargetWord[];
 }
 
 export interface WordEvaluation {
