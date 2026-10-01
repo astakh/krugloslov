@@ -53,9 +53,20 @@ class GigaChatClient:
         self._ssl_context = None
         if settings.GIGACHAT_CA_CERT_PATH:
             import ssl
-            self._ssl_context = ssl.create_default_context(
-                cafile=settings.GIGACHAT_CA_CERT_PATH
-            )
+            import os
+            # Check if certificate file exists before loading
+            if os.path.exists(settings.GIGACHAT_CA_CERT_PATH):
+                try:
+                    self._ssl_context = ssl.create_default_context(
+                        cafile=settings.GIGACHAT_CA_CERT_PATH
+                    )
+                    logger.info(f"Loaded SSL certificate from {settings.GIGACHAT_CA_CERT_PATH}")
+                except Exception as e:
+                    logger.warning(f"Failed to load SSL certificate: {e}. Using default SSL context.")
+                    self._ssl_context = None
+            else:
+                logger.warning(f"SSL certificate file not found: {settings.GIGACHAT_CA_CERT_PATH}. Using default SSL context.")
+                self._ssl_context = None
     
     async def _get_token(self) -> str:
         """Get valid access token, refreshing if needed."""
