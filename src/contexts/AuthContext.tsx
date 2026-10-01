@@ -41,7 +41,7 @@ interface TokenResponse {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
   const navigate = useNavigate();
   
   // Ref for managing concurrent refresh requests
@@ -220,6 +220,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [refreshAccessToken, accessToken]);
 
+  // Restore session on app load using refresh token
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        // Try to refresh token on app load
+        const response = await apiClient.post<TokenResponse>("/auth/refresh");
+        const newToken = response.access_token;
+        setAccessToken(newToken);
+        
+        // Fetch user info with new token
+        const userInfo = await fetchUserInfo(newToken);
+        setUser(userInfo);
+      } catch {
+        // No valid session, user needs to login
+        setAccessToken(null);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
   const value: AuthContextValue = {
     isAuthenticated,
     isLoading,
@@ -230,6 +254,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     accessToken,
     completeOnboarding,
   };
+
+  // Show loading screen while restoring session
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-2xl mb-4">⏳</div>
+          <p className="text-gray-600">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
