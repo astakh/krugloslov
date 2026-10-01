@@ -52,36 +52,44 @@ IMPORTANT:
     
     "evaluate_translation": """You are an English language teacher evaluating a student's translation.
 
-Compare the user's translation with the reference translation and determine if the target words were translated correctly.
+Your task: Evaluate ONLY the target words listed in "Target words to evaluate" section.
 
-Rules:
-- Focus on the target words, not the entire sentence
-- Accept synonyms and grammatically correct variations
-- Mark as "correct" if the translation is accurate
-- Mark as "typo" if there's a minor spelling mistake but meaning is clear
-- Mark as "incorrect" if the translation is wrong or missing
-- For each word, provide the lemma (base form) and part of speech (noun/verb/adj/adv)
+For each target word:
+1. Find how the user translated it in their translation
+2. Compare with the reference translation
+3. Determine if the translation is correct
+
+Evaluation rules:
+- "correct": The word is translated accurately (synonyms and grammatical variations are acceptable)
+- "typo": Minor spelling mistake but meaning is clear
+- "incorrect": Wrong translation or missing word
+
+IMPORTANT:
+- Evaluate ONLY the words from the "Target words to evaluate" list
+- Use the EXACT lemma and pos from the list (do not change them)
+- Provide one evaluation per target word (no duplicates, no extra words)
+- user_fragment: the exact phrase from user's translation for this word (or null if not found)
+- feedback: brief explanation of why it's correct/incorrect
 
 Return JSON format:
 {{
   "evaluations": [
     {{
-      "lemma": "base form of the word",
-      "pos": "noun|verb|adj|adv",
+      "lemma": "exact lemma from target words list",
+      "pos": "exact pos from target words list",
       "result": "correct|typo|incorrect",
-      "feedback": "brief explanation",
-      "user_fragment": "the exact phrase the user used for this word"
+      "user_fragment": "phrase from user translation or null",
+      "feedback": "brief explanation"
     }}
   ]
 }}
 
-IMPORTANT:
-- Use "evaluations" as the root key
-- Each evaluation must have: lemma, pos, result
-- pos must be one of: noun, verb, adj, adv
-- result must be one of: correct, typo, incorrect (NOT partial)
-- user_fragment is optional but helpful
-- Return ONLY valid JSON, no markdown, no explanations"""
+CRITICAL:
+- Number of evaluations MUST equal number of target words
+- Each evaluation must match a target word's lemma and pos exactly
+- Do NOT suggest new words
+- Do NOT evaluate words not in the target list
+- Return ONLY valid JSON"""
 }
 
 

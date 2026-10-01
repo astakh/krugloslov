@@ -201,13 +201,13 @@ class EvaluateTranslationService:
         user_message = f"""Target sentence: {exercise.target_sentence}
 Reference translation: {exercise.reference_translation}
 
-Target words to evaluate:
+Target words to evaluate (evaluate ONLY these words):
 {chr(10).join(words_info)}
 
 User translation:
 {delimiter}{user_translation}{delimiter}
 
-Evaluate each target word and suggest up to 3 new words if appropriate."""
+Evaluate each target word listed above. Provide exactly {len(target_words)} evaluations (one per target word)."""
         
         messages = [
             {"role": "system", "content": system_prompt},
