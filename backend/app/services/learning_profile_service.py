@@ -40,6 +40,8 @@ class LearningProfileService:
             dictionary_name=dictionary.name,
             daily_lesson_limit=profile.daily_lesson_limit,
             daily_lesson_limit_max=settings.DAILY_LESSON_LIMIT_MAX,
+            words_per_lesson=profile.words_per_lesson,
+            words_per_lesson_max=settings.WORDS_PER_LESSON_MAX,
             stats=stats,
         )
 
@@ -48,6 +50,7 @@ class LearningProfileService:
         level: Optional[str] = None,
         dictionary_id: Optional[int] = None,
         daily_lesson_limit: Optional[int] = None,
+        words_per_lesson: Optional[int] = None,
     ) -> dict:
         """
         Update learning profile settings.
@@ -56,6 +59,7 @@ class LearningProfileService:
             level: New level (A1-B2)
             dictionary_id: New dictionary ID
             daily_lesson_limit: New daily lesson limit
+            words_per_lesson: New words per lesson count
             
         Returns:
             Updated profile information
@@ -96,6 +100,16 @@ class LearningProfileService:
                 )
             profile.daily_lesson_limit = daily_lesson_limit
         
+        # Validate and update words per lesson
+        if words_per_lesson is not None:
+            if words_per_lesson < 1 or words_per_lesson > settings.WORDS_PER_LESSON_MAX:
+                raise AppException(
+                    status_code=422,
+                    code="invalid_words_per_lesson",
+                    message=f"Words per lesson must be between 1 and {settings.WORDS_PER_LESSON_MAX}",
+                )
+            profile.words_per_lesson = words_per_lesson
+        
         await self.session.commit()
         
         return {
@@ -103,6 +117,7 @@ class LearningProfileService:
             "level": profile.level,
             "dictionary_id": profile.dictionary_id,
             "daily_lesson_limit": profile.daily_lesson_limit,
+            "words_per_lesson": profile.words_per_lesson,
         }
 
     async def _get_learning_profile(self) -> LearningProfile:

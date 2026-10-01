@@ -49,6 +49,8 @@ class LearningProfileResponse(BaseModel):
     dictionary_name: str
     daily_lesson_limit: int
     daily_lesson_limit_max: int
+    words_per_lesson: int
+    words_per_lesson_max: int
     stats: LearningStats
 
 
@@ -57,6 +59,7 @@ class LearningProfileUpdateRequest(BaseModel):
     level: Optional[str] = None
     dictionary_id: Optional[int] = None
     daily_lesson_limit: Optional[int] = None
+    words_per_lesson: Optional[int] = None
 
 
 class LearningProfileUpdateResponse(BaseModel):
@@ -65,6 +68,7 @@ class LearningProfileUpdateResponse(BaseModel):
     level: str
     dictionary_id: int
     daily_lesson_limit: int
+    words_per_lesson: int
 
 
 class DictionaryListItem(BaseModel):

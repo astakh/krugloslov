@@ -26,6 +26,7 @@ class LearningProfile(Base):
         ForeignKey("dictionaries.id", ondelete="RESTRICT"), nullable=False
     )
     daily_lesson_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    words_per_lesson: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
     last_lesson_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -43,6 +44,7 @@ class LearningProfile(Base):
             name="ck_learning_profiles_level",
         ),
         CheckConstraint("daily_lesson_limit >= 1", name="ck_learning_profiles_daily_limit"),
+        CheckConstraint("words_per_lesson >= 1", name="ck_learning_profiles_words_per_lesson"),
     )
 
     def __repr__(self) -> str:

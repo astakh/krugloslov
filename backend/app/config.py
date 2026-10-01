@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     # SRS / Lesson
     WORDS_PER_LESSON: int = Field(default=10, ge=1, le=100)
+    WORDS_PER_LESSON_MAX: int = Field(default=20, ge=1, le=100)
     DAILY_LESSON_LIMIT_DEFAULT: int = Field(default=5, ge=1, le=100)
     DAILY_LESSON_LIMIT_MAX: int = Field(default=20, ge=1, le=100)
 

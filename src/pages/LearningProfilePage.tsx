@@ -17,6 +17,8 @@ interface LearningProfile {
   dictionary_name: string;
   daily_lesson_limit: number;
   daily_lesson_limit_max: number;
+  words_per_lesson: number;
+  words_per_lesson_max: number;
   stats: {
     words: {
       active: number;
@@ -37,6 +39,7 @@ const LearningProfilePage: React.FC = () => {
   const [level, setLevel] = useState("A1");
   const [dictionaryId, setDictionaryId] = useState<number>(1);
   const [dailyLimit, setDailyLimit] = useState(5);
+  const [wordsPerLesson, setWordsPerLesson] = useState(10);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +65,7 @@ const LearningProfilePage: React.FC = () => {
       setLevel(profileData.level);
       setDictionaryId(profileData.dictionary_id);
       setDailyLimit(profileData.daily_lesson_limit);
+      setWordsPerLesson(profileData.words_per_lesson);
       setDictionaries(dictionariesData.dictionaries);
     } catch (err) {
       setError("Не удалось загрузить данные");
@@ -81,6 +85,7 @@ const LearningProfilePage: React.FC = () => {
         level,
         dictionary_id: dictionaryId,
         daily_lesson_limit: dailyLimit,
+        words_per_lesson: wordsPerLesson,
       });
       
       setSuccess("Настройки успешно сохранены");
@@ -208,7 +213,29 @@ const LearningProfilePage: React.FC = () => {
         </p>
       </div>
 
+      {/* Words per lesson */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Количество слов в уроке</h2>
+        <div className="flex items-center gap-4">
+          <input
+            type="range"
+            min="5"
+            max={profile.words_per_lesson_max}
+            value={wordsPerLesson}
+            onChange={(e) => setWordsPerLesson(Number(e.target.value))}
+            className="flex-1"
+          />
+          <div className="text-2xl font-bold text-indigo-600 w-12 text-center">
+            {wordsPerLesson}
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 mt-2">
+          От 5 до {profile.words_per_lesson_max} слов в одном уроке
+        </p>
+      </div>
+
       {/* Statistics */}
+
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Статистика обучения</h2>
         

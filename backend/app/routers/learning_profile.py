@@ -56,4 +56,5 @@ async def update_learning_profile(
         level=request.level,
         dictionary_id=request.dictionary_id,
         daily_lesson_limit=request.daily_lesson_limit,
+        words_per_lesson=request.words_per_lesson,
     )
