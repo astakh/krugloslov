@@ -58,23 +58,23 @@ async def update_prompt():
     engine = create_async_engine(settings.DATABASE_URL, echo=False)
     
     try:
-        async with engine.begin() as conn:
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+        async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        
+        async with async_session() as session:
             # Check if prompt exists
-            result = await conn.execute(
+            result = await session.execute(
                 select(Prompt).where(Prompt.key == "evaluate_translation")
             )
-            existing_prompt = result.scalars().one_or_none()
+            existing_prompt = result.scalar_one_or_none()
             
             if existing_prompt:
                 print(f"✅ Found existing prompt 'evaluate_translation'")
                 print(f"   Current length: {len(existing_prompt.system_template)} chars")
                 
                 # Update the prompt
-                await conn.execute(
-                    update(Prompt)
-                    .where(Prompt.key == "evaluate_translation")
-                    .values(system_template=NEW_PROMPT)
-                )
+                existing_prompt.system_template = NEW_PROMPT
+                await session.commit()
                 
                 print(f"✅ Updated prompt 'evaluate_translation'")
                 print(f"   New length: {len(NEW_PROMPT)} chars")
