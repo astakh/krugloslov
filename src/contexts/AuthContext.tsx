@@ -236,13 +236,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // No valid session, user needs to login
         setAccessToken(null);
         setUser(null);
+        // Redirect to login page if not already there
+        if (window.location.pathname !== "/auth" && window.location.pathname !== "/register") {
+          navigate("/auth");
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     restoreSession();
-  }, []);
+  }, [navigate]);
 
   const value: AuthContextValue = {
     isAuthenticated,

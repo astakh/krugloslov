@@ -37,12 +37,18 @@ const HomePage: React.FC = () => {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      navigate("/auth");
+      return;
+    }
+    
     loadDashboard();
-  }, []);
+  }, [isAuthenticated, navigate]);
 
   const loadDashboard = async () => {
     try {
