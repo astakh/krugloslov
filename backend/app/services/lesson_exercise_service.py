@@ -16,6 +16,7 @@ from app.models.lesson_exercise import LessonExercise
 from app.models.lesson_exercise_word import LessonExerciseWord
 from app.models.lesson_exercise_suggestion import LessonExerciseSuggestion
 from app.models.user_word import UserWord
+from app.models.word import Word
 from app.schemas.lesson_evaluate import EvaluateResponse, SuggestedWord, WordEvaluation
 from app.services.evaluate_translation_service import EvaluateTranslationService
 from app.services.srs_service import calculate_srs
