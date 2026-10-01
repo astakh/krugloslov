@@ -415,15 +415,40 @@ Groups:
             
             try:
                 logger.info(f"Calling GigaChat API (attempt {attempt + 1})")
-                response = await gigachat_client.chat_json(
+                
+                # Get raw JSON response without validation
+                raw_response = await gigachat_client.chat_json_raw(
                     messages=messages,
-                    validator=LlmGenerateResponse,
                     temperature=settings.GEN_TEMPERATURE,
                     max_tokens=2000,
-                    timeout=min(timeout - elapsed, 25.0),  # Use remaining time
+                    timeout=min(timeout - elapsed, 25.0),
                     max_retries=1,
                 )
-                logger.info(f"LLM response received successfully")
+                logger.info(f"LLM raw response received")
+                
+                # Adapt response to expected format
+                from app.services.llm_response_adapter import adapt_llm_response
+                
+                # Prepare expected groups format for adapter
+                expected_groups_for_adapter = []
+                for idx in invalid_group_indices:
+                    group_words = []
+                    for wid in groups[idx]:
+                        word_data = word_info[wid]
+                        group_words.append({
+                            "lemma": word_data["lemma"],
+                            "pos": word_data["pos"]
+                        })
+                    expected_groups_for_adapter.append(group_words)
+                
+                try:
+                    response = adapt_llm_response(raw_response, expected_groups_for_adapter)
+                    logger.info(f"LLM response adapted successfully")
+                except ValueError as e:
+                    logger.warning(f"Failed to adapt LLM response: {e}")
+                    if attempt < max_retries:
+                        continue
+                    raise LlmInvalidResponse(f"Failed to adapt LLM response: {e}")
                 
                 # Validate groups
                 expected_groups = [

@@ -342,6 +342,85 @@ class GigaChatClient:
         
         raise LlmInvalidResponse("Failed to get valid response after retries")
     
+    async def chat_json_raw(
+        self,
+        messages: list[dict[str, str]],
+        temperature: float,
+        max_tokens: int,
+        timeout: float,
+        max_retries: int = 2,
+    ) -> dict:
+        """
+        Send chat request and return raw JSON without validation.
+        
+        This method is useful when you need to adapt the response before validation.
+        
+        Args:
+            messages: List of message dicts
+            temperature: Sampling temperature
+            max_tokens: Maximum tokens
+            timeout: Request timeout
+            max_retries: Maximum retries on JSON extraction failure
+        
+        Returns:
+            Raw JSON dict from LLM response
+        
+        Raises:
+            LlmInvalidResponse: Failed to get valid JSON after retries
+            LlmRefused: Content refused
+        """
+        for attempt in range(max_retries + 1):
+            try:
+                response = await self.chat(
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    timeout=timeout,
+                )
+                
+                content = response["content"]
+                finish_reason = response["finish_reason"]
+                
+                # Check finish reason
+                if finish_reason == "blacklist":
+                    logger.warning("Content refused by blacklist")
+                    raise LlmRefused("Content refused by GigaChat")
+                
+                if finish_reason == "length":
+                    logger.warning("Response truncated (length)")
+                    if attempt < max_retries:
+                        continue
+                    raise LlmInvalidResponse("Response truncated")
+                
+                # Extract JSON from response
+                json_str = self._extract_json(content)
+                if not json_str:
+                    logger.warning(f"Failed to extract JSON from: {content[:200]}")
+                    if attempt < max_retries:
+                        continue
+                    raise LlmInvalidResponse("Failed to extract JSON from response")
+                
+                # Parse JSON
+                try:
+                    data = json.loads(json_str)
+                    logger.debug(f"Extracted raw JSON: {data}")
+                    return data
+                except json.JSONDecodeError as e:
+                    logger.warning(f"JSON parse error: {e}")
+                    if attempt < max_retries:
+                        continue
+                    raise LlmInvalidResponse(f"JSON parse error: {e}")
+                
+            except (LlmUnavailable, LlmQuotaExceeded):
+                # Don't retry these
+                raise
+            
+            except LlmRefused:
+                # Don't retry refused content
+                raise
+        
+        raise LlmInvalidResponse("Failed to get valid response after retries")
+    
     def _extract_json(self, text: str) -> str | None:
         """Extract JSON from text, handling markdown code blocks."""
         # Remove markdown code blocks
