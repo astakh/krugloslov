@@ -237,13 +237,13 @@ class EvaluateTranslationService:
         # Call LLM
         start_time = __import__("time").time()
         try:
-            # Get raw JSON response (single attempt, no retries)
+            # Get raw JSON response (with 1 retry on parse error)
             raw_response = await gigachat_client.chat_json_raw(
                 messages=messages,
                 temperature=settings.EVAL_TEMPERATURE,
                 max_tokens=1000,
                 timeout=10.0,
-                max_retries=0
+                max_retries=1
             )
             
             # === ЛОГИРОВАНИЕ СЫРОГО ОТВЕТА LLM ===

@@ -314,14 +314,31 @@ class GigaChatClient:
                         continue
                     raise LlmInvalidResponse("Failed to extract JSON from response")
                 
+                # Log raw JSON string for debugging
+                logger.debug(f"Extracted JSON string: {json_str[:500]}")
+                
                 # Parse JSON
                 try:
                     data = json.loads(json_str)
+                    logger.debug(f"Successfully parsed JSON: {list(data.keys())}")
                 except json.JSONDecodeError as e:
-                    logger.warning(f"JSON parse error: {e}")
-                    if attempt < max_retries:
-                        continue
-                    raise LlmInvalidResponse(f"JSON parse error: {e}")
+                    logger.error(f"JSON parse error: {e}")
+                    logger.error(f"Error position: line {e.lineno}, column {e.colno}")
+                    logger.error(f"Raw JSON string that failed to parse: {json_str}")
+                    logger.error(f"Full LLM response content: {content}")
+                    
+                    # Try one more time with more aggressive fixes
+                    try:
+                        fixed_json = self._fix_common_json_issues(json_str)
+                        logger.info(f"Attempting to parse fixed JSON: {fixed_json[:500]}")
+                        data = json.loads(fixed_json)
+                        logger.info(f"Successfully parsed fixed JSON")
+                    except json.JSONDecodeError as e2:
+                        logger.error(f"Fixed JSON also failed to parse: {e2}")
+                        if attempt < max_retries:
+                            logger.info(f"Retrying LLM request (attempt {attempt + 2}/{max_retries + 1})")
+                            continue
+                        raise LlmInvalidResponse(f"JSON parse error: {e}")
                 
                 # Validate with Pydantic
                 try:
@@ -422,7 +439,7 @@ class GigaChatClient:
         raise LlmInvalidResponse("Failed to get valid response after retries")
     
     def _extract_json(self, text: str) -> str | None:
-        """Extract JSON from text, handling markdown code blocks."""
+        """Extract JSON from text, handling markdown code blocks and common issues."""
         # Remove markdown code blocks
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]
@@ -439,6 +456,7 @@ class GigaChatClient:
                 break
         
         if start == -1:
+            logger.warning(f"No JSON object or array found in text: {text[:200]}")
             return None
         
         # Find matching closing bracket
@@ -454,9 +472,34 @@ class GigaChatClient:
                     break
         
         if end == -1:
+            logger.warning(f"Unmatched brackets in JSON: {text[:200]}")
             return None
         
-        return text[start:end]
+        json_str = text[start:end]
+        
+        # Try to fix common JSON issues
+        json_str = self._fix_common_json_issues(json_str)
+        
+        return json_str
+    
+    def _fix_common_json_issues(self, json_str: str) -> str:
+        """Attempt to fix common JSON formatting issues."""
+        import re
+        
+        # Fix missing quotes around keys (e.g., {key: "value"} -> {"key": "value"})
+        json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r' "\1":', json_str)
+        
+        # Fix single quotes to double quotes
+        json_str = json_str.replace("'", '"')
+        
+        # Fix trailing commas (e.g., {"a": 1,} -> {"a": 1})
+        json_str = re.sub(r',\s*}', '}', json_str)
+        json_str = re.sub(r',\s*]', ']', json_str)
+        
+        # Fix missing colon (e.g., {"key" "value"} -> {"key": "value"})
+        json_str = re.sub(r'"\s+"', '": "', json_str)
+        
+        return json_str
 
 
 # Global client instance
