@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./contexts/AuthContext";
 import BottomNav from "./components/BottomNav";
+import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -39,26 +40,29 @@ const AppContent: React.FC = () => {
     <div className="page-wrapper">
       <main className="page-content">
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          {/* Public routes */}
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/dictionary" element={<DictionaryPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/lesson/preview" element={<LessonPreviewPage />} />
-          <Route path="/lesson/:lessonId/exercise/:exerciseId" element={<ExercisePage />} />
-          <Route path="/lesson/:lessonId/review/:exerciseId" element={<ReviewPage />} />
-          <Route path="/lesson/:lessonId/resume" element={<ResumePage />} />
-          <Route path="/lesson/:lessonId/complete" element={<LessonCompletePage />} />
-          <Route path="/lesson/:lessonId/summary" element={<LessonCompletePage />} />
-          <Route path="/lesson/*" element={<LessonPage />} />
-          <Route path="/vocabulary/word/:wordId" element={<WordDetailPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/learning-profile" element={<LearningProfilePage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/admin/reports" element={<AdminReportsPage />} />
-          <Route path="/admin/users" element={<AdminUsersPage />} />
-          <Route path="/admin/db" element={<AdminDbPage />} />
-          <Route path="/admin/prompts" element={<AdminPromptsPage />} />
+          
+          {/* Protected routes - redirect to /auth if not authenticated */}
+          <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+          <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+          <Route path="/dictionary" element={<ProtectedRoute><DictionaryPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/lesson/preview" element={<ProtectedRoute><LessonPreviewPage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/exercise/:exerciseId" element={<ProtectedRoute><ExercisePage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/review/:exerciseId" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/resume" element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/complete" element={<ProtectedRoute><LessonCompletePage /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId/summary" element={<ProtectedRoute><LessonCompletePage /></ProtectedRoute>} />
+          <Route path="/lesson/*" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
+          <Route path="/vocabulary/word/:wordId" element={<ProtectedRoute><WordDetailPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/learning-profile" element={<ProtectedRoute><LearningProfilePage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+          <Route path="/admin/reports" element={<ProtectedRoute><AdminReportsPage /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsersPage /></ProtectedRoute>} />
+          <Route path="/admin/db" element={<ProtectedRoute><AdminDbPage /></ProtectedRoute>} />
+          <Route path="/admin/prompts" element={<ProtectedRoute><AdminPromptsPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <BottomNav />
