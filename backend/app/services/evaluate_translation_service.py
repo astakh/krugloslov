@@ -268,7 +268,6 @@ class EvaluateTranslationService:
                 for i, eval in enumerate(response.evaluations, 1):
                     logger.info(f"  {i}. {eval.lemma} ({eval.pos}): {eval.result}")
                     logger.info(f"     user_fragment: {eval.user_fragment}")
-                    logger.info(f"     feedback: {eval.feedback}")
                 logger.info("=" * 80)
                 
                 logger.info(f"Evaluation response adapted successfully")

@@ -93,9 +93,6 @@ def adapt_evaluation_response(
         else:
             result = raw_result
         
-        # Extract feedback
-        feedback = eval_item.get("feedback", eval_item.get("comment", ""))
-        
         # Extract user_fragment
         user_fragment = eval_item.get("user_fragment", eval_item.get("fragment"))
         
@@ -109,7 +106,6 @@ def adapt_evaluation_response(
             lemma=lemma,
             pos=pos or "unknown",
             result=result,
-            feedback=feedback,
             user_fragment=user_fragment
         ))
     
