@@ -220,6 +220,20 @@ class EvaluateTranslationService:
             for tw in target_words
         ]
         
+        # === ПОДРОБНОЕ ЛОГИРОВАНИЕ ===
+        logger.info("=" * 80)
+        logger.info("LLM EVALUATION REQUEST")
+        logger.info("=" * 80)
+        logger.info(f"Exercise ID: {exercise.id}")
+        logger.info(f"Target sentence: {exercise.target_sentence}")
+        logger.info(f"Reference translation: {exercise.reference_translation}")
+        logger.info(f"User translation: {user_translation}")
+        logger.info(f"Target words count: {len(target_words)}")
+        logger.info("Target words:")
+        for i, tw in enumerate(target_words, 1):
+            logger.info(f"  {i}. {tw.word.lemma} ({tw.word.pos}): {tw.surface_form}")
+        logger.info("=" * 80)
+        
         # Call LLM
         start_time = __import__("time").time()
         try:
@@ -232,14 +246,35 @@ class EvaluateTranslationService:
                 max_retries=0
             )
             
+            # === ЛОГИРОВАНИЕ СЫРОГО ОТВЕТА LLM ===
+            logger.info("=" * 80)
+            logger.info("LLM RAW RESPONSE")
+            logger.info("=" * 80)
+            import json
+            logger.info(json.dumps(raw_response, indent=2, ensure_ascii=False))
+            logger.info("=" * 80)
+            
             # Adapt response to expected format
             from app.services.llm_evaluation_adapter import adapt_evaluation_response
             
             try:
                 response = adapt_evaluation_response(raw_response, expected_words)
+                
+                # === ЛОГИРОВАНИЕ АДАПТИРОВАННОГО ОТВЕТА ===
+                logger.info("=" * 80)
+                logger.info("ADAPTED RESPONSE")
+                logger.info("=" * 80)
+                logger.info(f"Evaluations count: {len(response.evaluations)}")
+                for i, eval in enumerate(response.evaluations, 1):
+                    logger.info(f"  {i}. {eval.lemma} ({eval.pos}): {eval.result}")
+                    logger.info(f"     user_fragment: {eval.user_fragment}")
+                    logger.info(f"     feedback: {eval.feedback}")
+                logger.info("=" * 80)
+                
                 logger.info(f"Evaluation response adapted successfully")
             except ValueError as e:
                 logger.warning(f"Failed to adapt evaluation response: {e}")
+                logger.warning(f"Raw response was: {json.dumps(raw_response, indent=2, ensure_ascii=False)}")
                 raise LlmInvalidResponse(f"Failed to adapt evaluation response: {e}")
             
             # Log successful call
@@ -279,6 +314,12 @@ class EvaluateTranslationService:
         user_translation: str,
     ) -> List[WordEvaluation]:
         """Process and validate LLM evaluations."""
+        logger.info("=" * 80)
+        logger.info("PROCESSING LLM EVALUATIONS")
+        logger.info("=" * 80)
+        logger.info(f"LLM returned {len(llm_evaluations)} evaluations")
+        logger.info(f"Expected {len(target_words)} target words")
+        
         # Build lookup maps
         target_map = {tw.word_id: tw for tw in target_words}
         lemma_pos_map = {(tw.word.lemma, tw.word.pos): tw for tw in target_words}
@@ -286,12 +327,21 @@ class EvaluateTranslationService:
         # Build lemma-only map for fallback matching
         lemma_map = {tw.word.lemma: tw for tw in target_words}
         
+        logger.info(f"Target words map:")
+        for word_id, tw in target_map.items():
+            logger.info(f"  word_id={word_id}: {tw.word.lemma} ({tw.word.pos})")
+        
         evaluations = []
         
-        for llm_eval in llm_evaluations:
+        for idx, llm_eval in enumerate(llm_evaluations, 1):
+            logger.info(f"Processing LLM evaluation {idx}: {llm_eval.lemma} ({llm_eval.pos}) = {llm_eval.result}")
+            
             # Try to find matching target word
             # First try exact match with lemma and pos
             tw = lemma_pos_map.get((llm_eval.lemma, llm_eval.pos))
+            
+            if tw:
+                logger.info(f"  ✓ Exact match found: word_id={tw.word_id}")
             
             # If not found and pos is "unknown", try lemma-only match
             if not tw and (llm_eval.pos == "unknown" or not llm_eval.pos):
@@ -299,10 +349,10 @@ class EvaluateTranslationService:
                 if tw:
                     # Use the actual pos from target word
                     llm_eval.pos = tw.word.pos
-                    logger.debug(f"Matched word '{llm_eval.lemma}' by lemma only, using pos '{tw.word.pos}'")
+                    logger.info(f"  ✓ Lemma-only match found: word_id={tw.word_id}, using pos '{tw.word.pos}'")
             
             if not tw:
-                logger.warning(f"LLM returned evaluation for unknown word: {llm_eval.lemma} ({llm_eval.pos})")
+                logger.warning(f"  ✗ LLM returned evaluation for unknown word: {llm_eval.lemma} ({llm_eval.pos})")
                 continue
             
             # Validate user_fragment
@@ -330,11 +380,14 @@ class EvaluateTranslationService:
         covered_word_ids = {e.word_id for e in evaluations}
         missing_word_ids = set(target_map.keys()) - covered_word_ids
         
+        logger.info(f"Coverage check: {len(covered_word_ids)} covered, {len(missing_word_ids)} missing")
+        
         if missing_word_ids:
-            logger.warning(f"LLM didn't evaluate all target words. Missing: {missing_word_ids}")
+            logger.warning(f"LLM didn't evaluate all target words. Missing word_ids: {missing_word_ids}")
             # Add missing words as incorrect
             for word_id in missing_word_ids:
                 tw = target_map[word_id]
+                logger.info(f"  Adding missing word as incorrect: {tw.word.lemma} ({tw.word.pos})")
                 evaluations.append(WordEvaluation(
                     word_id=tw.word_id,
                     lemma=tw.word.lemma,
@@ -344,6 +397,14 @@ class EvaluateTranslationService:
                     user_fragment=None,
                     translations=tw.word.translations
                 ))
+        
+        logger.info("=" * 80)
+        logger.info(f"FINAL RESULT: {len(evaluations)} evaluations")
+        for idx, eval in enumerate(evaluations, 1):
+            logger.info(f"  {idx}. word_id={eval.word_id}: {eval.lemma} ({eval.pos}) = {eval.result}")
+            logger.info(f"     surface_form: {eval.surface_form}")
+            logger.info(f"     user_fragment: {eval.user_fragment}")
+        logger.info("=" * 80)
         
         return evaluations
     

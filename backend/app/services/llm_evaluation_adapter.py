@@ -63,7 +63,11 @@ def adapt_evaluation_response(
     
     # Convert to LlmWordEvaluation objects
     evaluations = []
-    for eval_item in evaluations_data:
+    logger.info(f"Processing {len(evaluations_data)} evaluations from LLM response")
+    
+    for idx, eval_item in enumerate(evaluations_data, 1):
+        logger.info(f"Processing evaluation {idx}: {eval_item}")
+        
         # Extract word info
         lemma = None
         pos = None
@@ -99,6 +103,8 @@ def adapt_evaluation_response(
             logger.warning(f"Cannot extract lemma from evaluation item: {eval_item}")
             continue
         
+        logger.info(f"  Extracted: lemma={lemma}, pos={pos}, result={result}")
+        
         evaluations.append(LlmWordEvaluation(
             lemma=lemma,
             pos=pos or "unknown",
@@ -124,6 +130,10 @@ def adapt_evaluation_response(
     
     if not evaluations:
         raise ValueError("No valid evaluations could be extracted from LLM response")
+    
+    logger.info(f"Adapter result: {len(evaluations)} evaluations extracted")
+    for idx, eval in enumerate(evaluations, 1):
+        logger.info(f"  {idx}. {eval.lemma} ({eval.pos}): {eval.result}")
     
     return LlmEvaluateResponse(
         evaluations=evaluations,
