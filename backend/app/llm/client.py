@@ -315,26 +315,33 @@ class GigaChatClient:
                     raise LlmInvalidResponse("Failed to extract JSON from response")
                 
                 # Log raw JSON string for debugging
-                logger.debug(f"Extracted JSON string: {json_str[:500]}")
+                logger.info(f"Extracted JSON string (first 1000 chars): {json_str[:1000]}")
                 
                 # Parse JSON
                 try:
                     data = json.loads(json_str)
-                    logger.debug(f"Successfully parsed JSON: {list(data.keys())}")
+                    logger.info(f"Successfully parsed JSON: {list(data.keys())}")
                 except json.JSONDecodeError as e:
                     logger.error(f"JSON parse error: {e}")
-                    logger.error(f"Error position: line {e.lineno}, column {e.colno}")
-                    logger.error(f"Raw JSON string that failed to parse: {json_str}")
-                    logger.error(f"Full LLM response content: {content}")
+                    logger.error(f"Error position: line {e.lineno}, column {e.colno}, char {e.pos}")
+                    logger.error(f"Raw JSON string that failed to parse (full): {json_str}")
+                    logger.error(f"Full LLM response content (full): {content}")
+                    
+                    # Show context around the error
+                    error_pos = e.pos
+                    context_start = max(0, error_pos - 50)
+                    context_end = min(len(json_str), error_pos + 50)
+                    logger.error(f"Context around error: ...{json_str[context_start:context_end]}...")
                     
                     # Try one more time with more aggressive fixes
                     try:
                         fixed_json = self._fix_common_json_issues(json_str)
-                        logger.info(f"Attempting to parse fixed JSON: {fixed_json[:500]}")
+                        logger.info(f"Attempting to parse fixed JSON (first 1000 chars): {fixed_json[:1000]}")
                         data = json.loads(fixed_json)
-                        logger.info(f"Successfully parsed fixed JSON")
+                        logger.info(f"Successfully parsed fixed JSON: {list(data.keys())}")
                     except json.JSONDecodeError as e2:
                         logger.error(f"Fixed JSON also failed to parse: {e2}")
+                        logger.error(f"Fixed JSON error position: line {e2.lineno}, column {e2.colno}, char {e2.pos}")
                         if attempt < max_retries:
                             logger.info(f"Retrying LLM request (attempt {attempt + 2}/{max_retries + 1})")
                             continue
@@ -486,18 +493,30 @@ class GigaChatClient:
         """Attempt to fix common JSON formatting issues."""
         import re
         
+        logger.info(f"Attempting to fix JSON issues in string (length: {len(json_str)})")
+        
         # Fix missing quotes around keys (e.g., {key: "value"} -> {"key": "value"})
         json_str = re.sub(r'(?<=[{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r' "\1":', json_str)
+        logger.debug(f"After fixing unquoted keys: {json_str[:200]}")
         
-        # Fix single quotes to double quotes
-        json_str = json_str.replace("'", '"')
+        # Fix single quotes to double quotes (but be careful not to break apostrophes in strings)
+        # Only replace single quotes that are used as string delimiters
+        json_str = re.sub(r"(?<=[\[{,])\s*'([^']*)'\s*(?=[\]},:])", r'"\1"', json_str)
+        logger.debug(f"After fixing single quotes: {json_str[:200]}")
         
         # Fix trailing commas (e.g., {"a": 1,} -> {"a": 1})
         json_str = re.sub(r',\s*}', '}', json_str)
         json_str = re.sub(r',\s*]', ']', json_str)
+        logger.debug(f"After fixing trailing commas: {json_str[:200]}")
         
         # Fix missing colon (e.g., {"key" "value"} -> {"key": "value"})
         json_str = re.sub(r'"\s+"', '": "', json_str)
+        logger.debug(f"After fixing missing colons: {json_str[:200]}")
+        
+        # Fix unescaped quotes inside strings
+        # This is tricky, so we'll skip it for now
+        
+        logger.info(f"JSON fixing completed, final length: {len(json_str)}")
         
         return json_str
 
