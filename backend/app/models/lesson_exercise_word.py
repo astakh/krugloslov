@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
