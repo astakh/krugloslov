@@ -79,8 +79,15 @@ def adapt_evaluation_response(
                 pos = eval_item[key]
                 break
         
-        # Extract result
-        result = eval_item.get("result", eval_item.get("status", "incorrect"))
+        # Extract result and normalize to allowed values
+        raw_result = eval_item.get("result", eval_item.get("status", "incorrect"))
+        # Normalize result to allowed values: correct, typo, incorrect
+        if raw_result == "partial":
+            result = "incorrect"  # Map partial to incorrect
+        elif raw_result not in ["correct", "typo", "incorrect"]:
+            result = "incorrect"  # Default to incorrect for unknown values
+        else:
+            result = raw_result
         
         # Extract feedback
         feedback = eval_item.get("feedback", eval_item.get("comment", ""))

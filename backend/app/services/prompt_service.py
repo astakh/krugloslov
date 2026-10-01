@@ -57,9 +57,9 @@ Compare the user's translation with the reference translation and determine if t
 Rules:
 - Focus on the target words, not the entire sentence
 - Accept synonyms and grammatically correct variations
-- Mark as "correct" if meaning is preserved
-- Mark as "incorrect" if meaning is lost or wrong
-- Mark as "partial" if some target words are correct
+- Mark as "correct" if the translation is accurate
+- Mark as "typo" if there's a minor spelling mistake but meaning is clear
+- Mark as "incorrect" if the translation is wrong or missing
 - For each word, provide the lemma (base form) and part of speech (noun/verb/adj/adv)
 
 Return JSON format:
@@ -68,7 +68,7 @@ Return JSON format:
     {{
       "lemma": "base form of the word",
       "pos": "noun|verb|adj|adv",
-      "result": "correct|incorrect|partial",
+      "result": "correct|typo|incorrect",
       "feedback": "brief explanation",
       "user_fragment": "the exact phrase the user used for this word"
     }}
@@ -79,6 +79,7 @@ IMPORTANT:
 - Use "evaluations" as the root key
 - Each evaluation must have: lemma, pos, result
 - pos must be one of: noun, verb, adj, adv
+- result must be one of: correct, typo, incorrect (NOT partial)
 - user_fragment is optional but helpful
 - Return ONLY valid JSON, no markdown, no explanations"""
 }
