@@ -287,11 +287,24 @@ Evaluate each target word and suggest up to 3 new words if appropriate."""
         target_map = {tw.word_id: tw for tw in target_words}
         lemma_pos_map = {(tw.word.lemma, tw.word.pos): tw for tw in target_words}
         
+        # Build lemma-only map for fallback matching
+        lemma_map = {tw.word.lemma: tw for tw in target_words}
+        
         evaluations = []
         
         for llm_eval in llm_evaluations:
-            # Find matching target word
+            # Try to find matching target word
+            # First try exact match with lemma and pos
             tw = lemma_pos_map.get((llm_eval.lemma, llm_eval.pos))
+            
+            # If not found and pos is "unknown", try lemma-only match
+            if not tw and (llm_eval.pos == "unknown" or not llm_eval.pos):
+                tw = lemma_map.get(llm_eval.lemma)
+                if tw:
+                    # Use the actual pos from target word
+                    llm_eval.pos = tw.word.pos
+                    logger.debug(f"Matched word '{llm_eval.lemma}' by lemma only, using pos '{tw.word.pos}'")
+            
             if not tw:
                 logger.warning(f"LLM returned evaluation for unknown word: {llm_eval.lemma} ({llm_eval.pos})")
                 continue

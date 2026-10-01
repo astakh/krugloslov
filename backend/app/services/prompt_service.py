@@ -60,18 +60,27 @@ Rules:
 - Mark as "correct" if meaning is preserved
 - Mark as "incorrect" if meaning is lost or wrong
 - Mark as "partial" if some target words are correct
+- For each word, provide the lemma (base form) and part of speech (noun/verb/adj/adv)
 
 Return JSON format:
 {{
-  "results": [
+  "evaluations": [
     {{
-      "word": "target word",
-      "status": "correct|incorrect|partial",
-      "feedback": "brief explanation"
+      "lemma": "base form of the word",
+      "pos": "noun|verb|adj|adv",
+      "result": "correct|incorrect|partial",
+      "feedback": "brief explanation",
+      "user_fragment": "the exact phrase the user used for this word"
     }}
-  ],
-  "overall": "correct|incorrect|partial"
-}}"""
+  ]
+}}
+
+IMPORTANT:
+- Use "evaluations" as the root key
+- Each evaluation must have: lemma, pos, result
+- pos must be one of: noun, verb, adj, adv
+- user_fragment is optional but helpful
+- Return ONLY valid JSON, no markdown, no explanations"""
 }
 
 

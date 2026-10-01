@@ -271,12 +271,24 @@ class LessonExerciseService:
         lesson_number: int
     ):
         """Update SRS for each word based on evaluation."""
+        # First, get user's learning_profile_id
+        from app.models.learning_profile import LearningProfile
+        profile_result = await self.session.execute(
+            select(LearningProfile.id)
+            .where(LearningProfile.user_id == self.user_id)
+        )
+        profile_id = profile_result.scalar_one_or_none()
+        
+        if not profile_id:
+            logger.error(f"Learning profile not found for user {self.user_id}")
+            return
+        
         for eval in word_evaluations:
-            # Get user_word
+            # Get user_word using learning_profile_id
             result = await self.session.execute(
                 select(UserWord)
                 .where(
-                    UserWord.user_id == self.user_id,
+                    UserWord.learning_profile_id == profile_id,
                     UserWord.word_id == eval.word_id
                 )
                 .with_for_update()
