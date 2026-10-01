@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     GIGACHAT_CA_CERT_PATH: str = Field(default="")
     GIGACHAT_MAX_CONCURRENCY: int = Field(default=3, ge=1, le=20)
 
+    # LLM timeouts
+    LLM_REQUEST_TIMEOUT: int = Field(default=60, ge=10, le=300, description="Request timeout in seconds")
+    LLM_TOKEN_TIMEOUT: int = Field(default=30, ge=10, le=120, description="Token refresh timeout in seconds")
+
     # LLM temperatures
     GEN_TEMPERATURE: float = Field(default=0.7, ge=0.0, le=2.0)
     EVAL_TEMPERATURE: float = Field(default=0.1, ge=0.0, le=2.0)

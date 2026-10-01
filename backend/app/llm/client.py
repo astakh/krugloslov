@@ -42,7 +42,7 @@ class GigaChatClient:
     """Client for GigaChat API with token management and retry logic."""
     
     OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
-    CHAT_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+    CHAT_URL = "https://api.giga.chat/v1/chat/completions"
     
     def __init__(self):
         self._token: TokenInfo | None = None
@@ -85,9 +85,10 @@ class GigaChatClient:
                         "Authorization": f"Basic {settings.GIGACHAT_AUTH_KEY}",
                         "RqUID": str(uuid.uuid4()),
                         "Content-Type": "application/x-www-form-urlencoded",
+                        "Accept": "application/json",
                     },
                     data={"scope": settings.GIGACHAT_SCOPE},
-                    timeout=10.0,
+                    timeout=float(settings.LLM_TOKEN_TIMEOUT),
                 )
                 
                 if response.status_code != 200:
@@ -134,6 +135,9 @@ class GigaChatClient:
         """
         token = await self._get_token()
         
+        # Use configured timeout or provided timeout, whichever is larger
+        effective_timeout = max(timeout, settings.LLM_REQUEST_TIMEOUT)
+        
         async with self._semaphore:
             async with httpx.AsyncClient(verify=self._ssl_context or True) as client:
                 try:
@@ -142,14 +146,16 @@ class GigaChatClient:
                         headers={
                             "Authorization": f"Bearer {token}",
                             "Content-Type": "application/json",
+                            "Accept": "application/json",
                         },
                         json={
                             "model": settings.GIGACHAT_MODEL,
                             "messages": messages,
                             "temperature": temperature,
                             "max_tokens": max_tokens,
+                            "stream": False,
                         },
-                        timeout=timeout,
+                        timeout=float(effective_timeout),
                     )
                     
                     # Handle HTTP errors
