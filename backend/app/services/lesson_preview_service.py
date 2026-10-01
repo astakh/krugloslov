@@ -33,7 +33,7 @@ class LessonPreviewService:
     def __init__(self, session: AsyncSession, user: User):
         self.session = session
         self.user = user
-        self.N = settings.WORDS_PER_LESSON
+        self.N = None  # Will be set from profile in preview()
 
     async def preview(self) -> dict:
         """
@@ -51,6 +51,9 @@ class LessonPreviewService:
         profile = await self._get_profile()
         if not profile:
             raise ValueError("Learning profile not found")
+
+        # Set words per lesson from profile
+        self.N = profile.words_per_lesson
 
         # Step 1: Check for in-progress lesson
         in_progress = await self._get_in_progress_lesson(profile.id)

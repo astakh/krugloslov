@@ -44,7 +44,7 @@ class LessonStartService:
     def __init__(self, session: AsyncSession, user: User):
         self.session = session
         self.user = user
-        self.N = settings.WORDS_PER_LESSON
+        self.N = None  # Will be set from profile in start_lesson()
     
     async def start_lesson(
         self,
@@ -69,6 +69,9 @@ class LessonStartService:
         
         # Get profile
         profile = await self._get_profile()
+        
+        # Set words per lesson from profile
+        self.N = profile.words_per_lesson
         
         # Check idempotency
         if idempotency_key:
