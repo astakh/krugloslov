@@ -169,7 +169,7 @@ async def check_database_connection():
     try:
         async with engine.connect() as conn:
             result = await conn.execute(text("SELECT 1"))
-            await result.scalar()
+            result.scalar()  # scalar() is NOT async in SQLAlchemy 2.0
         print("✅ Database connection successful")
         return True
     except Exception as e:
