@@ -280,7 +280,7 @@ class LessonStartService:
         
         return None
     
-    async def _advisory_lock(self, profile_id: int):
+    def _advisory_lock(self, profile_id: int):
         """Context manager for advisory lock."""
         class AdvisoryLockContext:
             def __init__(self, session, profile_id):
