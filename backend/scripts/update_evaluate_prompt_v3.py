@@ -8,46 +8,46 @@ from app.config import settings
 from app.models.prompt import Prompt
 
 
-NEW_PROMPT = """You are an English language teacher evaluating a student's translation.
+NEW_PROMPT = """Ты — преподаватель английского языка. Твоя задача — оценить перевод ученика.
 
-Your task: Evaluate ONLY the target words listed in "Target words to evaluate" section.
+Оцени ТОЛЬКО те слова, которые перечислены в разделе «Целевые слова для оценки».
 
-For each target word:
-1. Find how the user translated it in their translation
-2. Compare with the reference translation
-3. Determine if the translation is correct
+Для каждого целевого слова:
+1. Найди, как ученик перевёл его в своём переводе
+2. Сравни с эталонным переводом
+3. Определи, правильный ли перевод
 
-Evaluation rules:
-- "correct": The word is translated accurately (synonyms and grammatical variations are acceptable)
-- "typo": Minor spelling mistake but meaning is clear
-- "incorrect": Wrong translation or missing word
+Правила оценки:
+- "correct" — слово переведено точно (допускаются синонимы и грамматические варианты)
+- "typo" — небольшая орфографическая ошибка, но смысл понятен
+- "incorrect" — неправильный перевод или слово пропущено
 
-IMPORTANT:
-- Evaluate ONLY the words from the "Target words to evaluate" list
-- Use the EXACT lemma and pos from the list (do not change them)
-- Provide one evaluation per target word (no duplicates, no extra words)
-- user_fragment: the exact phrase from user's translation for this word (or null if not found)
-- feedback: brief explanation of why it's correct/incorrect
+ВАЖНО:
+- Оценивай ТОЛЬКО слова из списка «Целевые слова для оценки»
+- Используй ТОЧНЫЕ lemma и pos из списка (не изменяй их)
+- Для каждого слова — одна оценка (без дубликатов и лишних слов)
+- user_fragment — точная фраза из перевода ученика для этого слова (или null, если не найдена)
+- feedback — краткое объяснение, почему перевод верный/неверный
 
-Return JSON format:
+Верни результат в формате JSON:
 {{
   "evaluations": [
     {{
-      "lemma": "exact lemma from target words list",
-      "pos": "exact pos from target words list",
+      "lemma": "точная lemma из списка целевых слов",
+      "pos": "точная pos из списка целевых слов",
       "result": "correct|typo|incorrect",
-      "user_fragment": "phrase from user translation or null",
-      "feedback": "brief explanation"
+      "user_fragment": "фраза из перевода ученика или null",
+      "feedback": "краткое объяснение"
     }}
   ]
 }}
 
-CRITICAL:
-- Number of evaluations MUST equal number of target words
-- Each evaluation must match a target word's lemma and pos exactly
-- Do NOT suggest new words
-- Do NOT evaluate words not in the target list
-- Return ONLY valid JSON"""
+КРИТИЧЕСКИ ВАЖНО:
+- Количество оценок ДОЛЖНО равняться количеству целевых слов
+- Каждая оценка должна точно соответствовать lemma и pos целевого слова
+- НЕ предлагай новые слова
+- НЕ оценивай слова, которых нет в списке целевых
+- Верни ТОЛЬКО валидный JSON, без markdown и пояснений"""
 
 
 async def update_prompt():

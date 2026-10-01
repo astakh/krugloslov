@@ -198,16 +198,16 @@ class EvaluateTranslationService:
         for tw in target_words:
             words_info.append(f"- {tw.word.lemma} ({tw.word.pos}): {tw.surface_form}")
         
-        user_message = f"""Target sentence: {exercise.target_sentence}
-Reference translation: {exercise.reference_translation}
+        user_message = f"""Исходное предложение: {exercise.target_sentence}
+Эталонный перевод: {exercise.reference_translation}
 
-Target words to evaluate (evaluate ONLY these words):
+Целевые слова для оценки (оцени ТОЛЬКО эти слова):
 {chr(10).join(words_info)}
 
-User translation:
+Перевод ученика:
 {delimiter}{user_translation}{delimiter}
 
-Evaluate each target word listed above. Provide exactly {len(target_words)} evaluations (one per target word)."""
+Оцени каждое целевое слово из списка выше. Предоставь ровно {len(target_words)} оценок (одну на каждое слово)."""
         
         messages = [
             {"role": "system", "content": system_prompt},
