@@ -50,7 +50,12 @@ const HomePage: React.FC = () => {
       const data = await apiClient.get<DashboardData>("/dashboard/summary");
       setDashboard(data);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
+      // Handle onboarding required error
+      if (err?.error?.code === "onboarding_required") {
+        navigate("/onboarding");
+        return;
+      }
       setError("Не удалось загрузить данные");
       console.error(err);
     } finally {

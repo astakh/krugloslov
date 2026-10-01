@@ -191,9 +191,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     apiClient.setTokenProvider(() => accessToken);
   }, [accessToken]);
 
+  // Redirect to onboarding if authenticated but not onboarded
+  useEffect(() => {
+    if (user && !user.is_onboarded && window.location.pathname !== "/onboarding") {
+      navigate("/onboarding");
+    }
+  }, [user, navigate]);
+
   // Listen for 401 events from API client
   useEffect(() => {
     const handleUnauthorized = async () => {
+      // Only try to refresh if we have an access token
+      // (otherwise we're not authenticated yet)
+      if (!accessToken) {
+        return;
+      }
+      
       try {
         await refreshAccessToken();
       } catch {
@@ -205,7 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       window.removeEventListener("api:unauthorized", handleUnauthorized);
     };
-  }, [refreshAccessToken]);
+  }, [refreshAccessToken, accessToken]);
 
   const value: AuthContextValue = {
     isAuthenticated,
