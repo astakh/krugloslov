@@ -507,7 +507,7 @@ Groups:
         )
         words = result.scalars().all()
         
-        return {
+        word_info = {
             w.id: {
                 "word_id": w.id,
                 "lemma": w.lemma,
@@ -516,6 +516,12 @@ Groups:
             }
             for w in words
         }
+        
+        logger.info(f"Word info for {len(word_ids)} words:")
+        for wid, info in word_info.items():
+            logger.info(f"  word_id={wid}: {info['lemma']} ({info['pos']})")
+        
+        return word_info
     
     async def _create_lesson_transaction(
         self,
@@ -629,6 +635,9 @@ Groups:
             
             # Create exercises
             for idx, (group, generated) in enumerate(zip(groups, generated_groups)):
+                logger.info(f"Creating exercise {idx} with group: {group}")
+                logger.info(f"Generated words: {generated['words']}")
+                
                 exercise = LessonExercise(
                     lesson_id=lesson.id,
                     order_index=idx,
@@ -641,17 +650,29 @@ Groups:
                 
                 # Create exercise words - match by lemma and pos
                 for word_data in generated["words"]:
+                    logger.info(f"Matching word: {word_data['lemma']} ({word_data['pos']})")
+                    
+                    # Normalize pos (adjective -> adj)
+                    llm_pos = word_data["pos"]
+                    if llm_pos == "adjective":
+                        llm_pos = "adj"
+                    elif llm_pos == "adverb":
+                        llm_pos = "adv"
+                    
                     # Find matching word_id by comparing lemma and pos
                     word_id = None
                     for wid in group:
                         if wid in word_info:
                             info = word_info[wid]
-                            if info["lemma"] == word_data["lemma"] and info["pos"] == word_data["pos"]:
+                            logger.debug(f"Checking word_id={wid}: {info['lemma']} ({info['pos']}) vs {word_data['lemma']} ({llm_pos})")
+                            if info["lemma"] == word_data["lemma"] and info["pos"] == llm_pos:
                                 word_id = wid
+                                logger.info(f"✓ Matched word_id={wid}")
                                 break
                     
                     if word_id is None:
-                        logger.warning(f"Could not match word: {word_data['lemma']} ({word_data['pos']})")
+                        logger.warning(f"✗ Could not match word: {word_data['lemma']} ({word_data['pos']})")
+                        logger.warning(f"  Available words in group: {[(wid, word_info[wid]['lemma'], word_info[wid]['pos']) for wid in group if wid in word_info]}")
                         continue
                     
                     exercise_word = LessonExerciseWord(
