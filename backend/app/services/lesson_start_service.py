@@ -537,172 +537,170 @@ Groups:
         idempotency_key: Optional[str],
     ) -> Lesson:
         """Create lesson in a single transaction."""
-        # Start transaction
-        async with self.session.begin():
-            # Lock profile row
-            result = await self.session.execute(
-                select(LearningProfile)
-                .where(LearningProfile.id == profile.id)
-                .with_for_update()
+        # Lock profile row
+        result = await self.session.execute(
+            select(LearningProfile)
+            .where(LearningProfile.id == profile.id)
+            .with_for_update()
+        )
+        profile = result.scalar_one()
+        
+        # Re-verify conditions
+        result = await self.session.execute(
+            select(Lesson).where(
+                Lesson.learning_profile_id == profile.id,
+                Lesson.status == "in_progress"
             )
-            profile = result.scalar_one()
-            
-            # Re-verify conditions
+        )
+        if result.scalar_one_or_none():
+            raise AppException(
+                status_code=409,
+                code="resume_available",
+                message="Lesson already in progress"
+            )
+        
+        # Verify lesson number
+        if profile.last_lesson_number + 1 != lesson_number:
+            raise AppException(
+                status_code=409,
+                code="preview_outdated",
+                message="Lesson number changed"
+            )
+        
+        # Re-verify words
+        due_word_ids = [w["word_id"] for w in preview["due_words"]]
+        new_word_ids = [w["word_id"] for w in preview["new_words"]]
+        
+        # Check due words still active and due
+        for wid in due_word_ids:
             result = await self.session.execute(
-                select(Lesson).where(
-                    Lesson.learning_profile_id == profile.id,
-                    Lesson.status == "in_progress"
+                select(UserWord).where(
+                    UserWord.learning_profile_id == profile.id,
+                    UserWord.word_id == wid,
+                    UserWord.status == "active",
+                    UserWord.due_lesson_number <= lesson_number,
+                )
+            )
+            if not result.scalar_one_or_none():
+                raise AppException(
+                    status_code=409,
+                    code="preview_outdated",
+                    message="Due word no longer valid"
+                )
+        
+        # Check new words not in user_words
+        for wid in new_word_ids:
+            result = await self.session.execute(
+                select(UserWord).where(
+                    UserWord.learning_profile_id == profile.id,
+                    UserWord.word_id == wid,
                 )
             )
             if result.scalar_one_or_none():
                 raise AppException(
                     status_code=409,
-                    code="resume_available",
-                    message="Lesson already in progress"
-                )
-            
-            # Verify lesson number
-            if profile.last_lesson_number + 1 != lesson_number:
-                raise AppException(
-                    status_code=409,
                     code="preview_outdated",
-                    message="Lesson number changed"
+                    message="New word already in user_words"
                 )
-            
-            # Re-verify words
-            due_word_ids = [w["word_id"] for w in preview["due_words"]]
-            new_word_ids = [w["word_id"] for w in preview["new_words"]]
-            
-            # Check due words still active and due
-            for wid in due_word_ids:
-                result = await self.session.execute(
-                    select(UserWord).where(
-                        UserWord.learning_profile_id == profile.id,
-                        UserWord.word_id == wid,
-                        UserWord.status == "active",
-                        UserWord.due_lesson_number <= lesson_number,
-                    )
-                )
-                if not result.scalar_one_or_none():
-                    raise AppException(
-                        status_code=409,
-                        code="preview_outdated",
-                        message="Due word no longer valid"
-                    )
-            
-            # Check new words not in user_words
-            for wid in new_word_ids:
-                result = await self.session.execute(
-                    select(UserWord).where(
-                        UserWord.learning_profile_id == profile.id,
-                        UserWord.word_id == wid,
-                    )
-                )
-                if result.scalar_one_or_none():
-                    raise AppException(
-                        status_code=409,
-                        code="preview_outdated",
-                        message="New word already in user_words"
-                    )
-            
-            # Create new user_words for new words
-            user_tz = ZoneInfo(self.user.timezone)
-            now_utc = datetime.now(timezone.utc)
-            
-            for wid in new_word_ids:
-                user_word = UserWord(
-                    learning_profile_id=profile.id,
-                    word_id=wid,
-                    status="active",
-                    stage=0,
-                    due_lesson_number=lesson_number,
-                    source="dictionary",
-                )
-                self.session.add(user_word)
-            
-            # Update profile
-            profile.last_lesson_number = lesson_number
-            
-            # Create lesson
-            lesson = Lesson(
+        
+        # Create new user_words for new words
+        user_tz = ZoneInfo(self.user.timezone)
+        now_utc = datetime.now(timezone.utc)
+        
+        for wid in new_word_ids:
+            user_word = UserWord(
                 learning_profile_id=profile.id,
-                lesson_number=lesson_number,
-                status="in_progress",
-                words_per_lesson=self.N,
-                started_at=now_utc,
-                started_local_date=now_utc.astimezone(user_tz).date(),
+                word_id=wid,
+                status="active",
+                stage=0,
+                due_lesson_number=lesson_number,
+                source="dictionary",
             )
-            self.session.add(lesson)
+            self.session.add(user_word)
+        
+        # Update profile
+        profile.last_lesson_number = lesson_number
+        
+        # Create lesson
+        lesson = Lesson(
+            learning_profile_id=profile.id,
+            lesson_number=lesson_number,
+            status="in_progress",
+            words_per_lesson=self.N,
+            started_at=now_utc,
+            started_local_date=now_utc.astimezone(user_tz).date(),
+        )
+        self.session.add(lesson)
+        await self.session.flush()
+        
+        # Create exercises
+        for idx, (group, generated) in enumerate(zip(groups, generated_groups)):
+            logger.info(f"Creating exercise {idx} with group: {group}")
+            logger.info(f"Generated words: {generated['words']}")
+            
+            exercise = LessonExercise(
+                lesson_id=lesson.id,
+                order_index=idx,
+                target_sentence=generated["sentence"],
+                reference_translation=generated["reference_translation"],
+                status="pending",
+            )
+            self.session.add(exercise)
             await self.session.flush()
             
-            # Create exercises
-            for idx, (group, generated) in enumerate(zip(groups, generated_groups)):
-                logger.info(f"Creating exercise {idx} with group: {group}")
-                logger.info(f"Generated words: {generated['words']}")
+            # Create exercise words - match by lemma and pos
+            for word_data in generated["words"]:
+                logger.info(f"Matching word: {word_data['lemma']} ({word_data['pos']})")
                 
-                exercise = LessonExercise(
-                    lesson_id=lesson.id,
-                    order_index=idx,
-                    target_sentence=generated["sentence"],
-                    reference_translation=generated["reference_translation"],
-                    status="pending",
+                # Normalize pos (adjective -> adj)
+                llm_pos = word_data["pos"]
+                if llm_pos == "adjective":
+                    llm_pos = "adj"
+                elif llm_pos == "adverb":
+                    llm_pos = "adv"
+                
+                # Find matching word_id by comparing lemma and pos
+                word_id = None
+                for wid in group:
+                    if wid in word_info:
+                        info = word_info[wid]
+                        logger.debug(f"Checking word_id={wid}: {info['lemma']} ({info['pos']}) vs {word_data['lemma']} ({llm_pos})")
+                        if info["lemma"] == word_data["lemma"] and info["pos"] == llm_pos:
+                            word_id = wid
+                            logger.info(f"✓ Matched word_id={wid}")
+                            break
+                
+                if word_id is None:
+                    logger.warning(f"✗ Could not match word: {word_data['lemma']} ({word_data['pos']})")
+                    logger.warning(f"  Available words in group: {[(wid, word_info[wid]['lemma'], word_info[wid]['pos']) for wid in group if wid in word_info]}")
+                    continue
+                
+                exercise_word = LessonExerciseWord(
+                    exercise_id=exercise.id,
+                    word_id=word_id,
+                    surface_form=word_data["surface_form"],
+                    is_target=True,
+                    is_new=word_id in new_word_ids,
                 )
-                self.session.add(exercise)
-                await self.session.flush()
-                
-                # Create exercise words - match by lemma and pos
-                for word_data in generated["words"]:
-                    logger.info(f"Matching word: {word_data['lemma']} ({word_data['pos']})")
-                    
-                    # Normalize pos (adjective -> adj)
-                    llm_pos = word_data["pos"]
-                    if llm_pos == "adjective":
-                        llm_pos = "adj"
-                    elif llm_pos == "adverb":
-                        llm_pos = "adv"
-                    
-                    # Find matching word_id by comparing lemma and pos
-                    word_id = None
-                    for wid in group:
-                        if wid in word_info:
-                            info = word_info[wid]
-                            logger.debug(f"Checking word_id={wid}: {info['lemma']} ({info['pos']}) vs {word_data['lemma']} ({llm_pos})")
-                            if info["lemma"] == word_data["lemma"] and info["pos"] == llm_pos:
-                                word_id = wid
-                                logger.info(f"✓ Matched word_id={wid}")
-                                break
-                    
-                    if word_id is None:
-                        logger.warning(f"✗ Could not match word: {word_data['lemma']} ({word_data['pos']})")
-                        logger.warning(f"  Available words in group: {[(wid, word_info[wid]['lemma'], word_info[wid]['pos']) for wid in group if wid in word_info]}")
-                        continue
-                    
-                    exercise_word = LessonExerciseWord(
-                        exercise_id=exercise.id,
-                        word_id=word_id,
-                        surface_form=word_data["surface_form"],
-                        is_target=True,
-                        is_new=word_id in new_word_ids,
-                    )
-                    self.session.add(exercise_word)
-            
-            # Create events
-            from app.services.events import record_event
-            
+                self.session.add(exercise_word)
+        
+        # Create events
+        from app.services.events import record_event
+        
+        await record_event(
+            self.session,
+            self.user.id,
+            "lesson_started",
+            {"lesson_id": lesson.id, "lesson_number": lesson_number}
+        )
+        
+        for wid in new_word_ids:
             await record_event(
                 self.session,
                 self.user.id,
-                "lesson_started",
-                {"lesson_id": lesson.id, "lesson_number": lesson_number}
+                "new_word_accepted",
+                {"word_id": wid}
             )
-            
-            for wid in new_word_ids:
-                await record_event(
-                    self.session,
-                    self.user.id,
-                    "new_word_accepted",
-                    {"word_id": wid}
-                )
         
         return lesson
     
